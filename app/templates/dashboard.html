@@ -48,6 +48,145 @@
       background: #cbd5e1;
       border-radius: 4px;
     }
+
+    /* Kurumsal PDF ve Yazdırma (@media print) Optimizasyonları */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 12mm 10mm;
+      }
+
+      html, body {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        font-size: 11px !important;
+      }
+
+      /* Sayfadaki interaktif ve gereksiz öğeleri gizle */
+      header,
+      section.sticky,
+      #uploadModal,
+      #institutionDetailModal,
+      #mappingAlert,
+      #adHocToggleBar,
+      #adHocPanelBody,
+      #btnBackToTop,
+      footer,
+      .no-print,
+      button,
+      input,
+      select,
+      #btnToggleInstView,
+      #btnSubchartDual,
+      #btnSubchartRoot,
+      #btnSubchartPriority,
+      #techSearchInput,
+      #instSearchInput {
+        display: none !important;
+      }
+
+      /* Baskıda görünmesi gereken öğeler */
+      .print-only {
+        display: block !important;
+      }
+
+      /* Konteyner ve sayfa genişliği */
+      main {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+
+      .overflow-hidden, .overflow-x-auto {
+        overflow: visible !important;
+      }
+
+      .sticky, .fixed {
+        position: static !important;
+      }
+
+      /* 5 Adımlı Akış Hattı - A4 baskıda 5 sütun yan yana */
+      #escalationFlowContainer {
+        padding: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+      }
+      #escalationFlowContainer .grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
+      }
+
+      /* 4 Temel Yönetici KPI Kartı - Tek satırda 4 sütun */
+      #kpiCardsGrid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
+      }
+      #kpiCardsGrid > div {
+        padding: 0.75rem !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+      }
+
+      /* AI Yönetici Özeti Kartı - Detayları baskıda otomatik açık göster */
+      #aiExecutiveSummaryCard {
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+        padding: 0.85rem !important;
+      }
+      #aiSummaryDetailsContainer {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
+        margin-top: 0.5rem !important;
+        padding-top: 0.5rem !important;
+      }
+
+      /* Grafikler - Yan yana 2 sütun */
+      #chartsGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0.75rem !important;
+      }
+      #chartsGrid > div {
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+        padding: 0.75rem !important;
+      }
+      #chart3Card {
+        grid-column: span 2 !important;
+      }
+      #instChartView {
+        display: flex !important;
+      }
+      #instTableView {
+        display: none !important;
+      }
+
+      /* Canvas yüksekliklerinin kağıt sınırlarını aşmaması */
+      canvas {
+        max-height: 210px !important;
+      }
+
+      /* Teknisyen Performans Tablosu */
+      #techTableCard {
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+      }
+      #techTableCard table {
+        font-size: 10px !important;
+      }
+      #techTableCard th, #techTableCard td {
+        padding: 5px 6px !important;
+      }
+
+      /* Sayfa kesilmesini engelleyen kurumsal sınıflar */
+      .print-avoid-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+    }
   </style>
 </head>
 <body class="h-full flex flex-col text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
@@ -89,6 +228,13 @@
           <button onclick="openAndScrollToAdHoc()" class="h-9 px-3 inline-flex items-center space-x-1.5 text-xs font-semibold rounded-lg bg-indigo-950/80 hover:bg-indigo-900/90 text-indigo-200 border border-indigo-700/60 transition shadow-xs whitespace-nowrap" title="Akıllı Analisti Aç ve Odaklan">
             <i data-lucide="bot" class="w-4 h-4 text-purple-300 shrink-0"></i>
             <span class="hidden md:inline">Akıllı Analist</span>
+          </button>
+
+          <!-- PDF Export Button -->
+          <button id="btnExportPdf" onclick="exportPdfReport()" class="h-9 px-3 sm:px-4 inline-flex items-center space-x-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all focus:ring-2 focus:ring-rose-400 focus:outline-none whitespace-nowrap cursor-pointer" title="Yönetici Özeti PDF Raporu Oluştur ve Yazdır">
+            <i data-lucide="file-text" class="w-4 h-4 shrink-0"></i>
+            <span class="hidden sm:inline">Kurumsal PDF İndir</span>
+            <span class="sm:hidden">PDF</span>
           </button>
 
           <!-- Excel Export Button -->
@@ -436,6 +582,25 @@
   <!-- Main Content Container -->
   <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 w-full">
 
+    <!-- Dedicated Printable Executive Header (Visible only in print) -->
+    <div id="printHeader" class="hidden print:block mb-5 pb-4 border-b-2 border-slate-800">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-xl shadow-xs">
+            M
+          </div>
+          <div>
+            <h1 id="printReportTitle" class="text-xl font-extrabold text-slate-900 tracking-tight">METRİKA | Servis Masası Yönetici Raporu</h1>
+            <p class="text-xs text-slate-600">Operasyonel Metrik ve Performans Yönetim Özeti (Executive Brief)</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div id="printReportDate" class="text-xs font-bold text-slate-900">Rapor Tarihi: 29 Eylül 2026</div>
+          <div id="printReportScope" class="text-[11px] text-slate-600 mt-0.5">Dönem: Son 7 Gün | Kapsam: Tüm Operasyon</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Smart Column Mapping Banner (Auto-dismissing) -->
     <div id="mappingAlert" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-blue-900 shadow-sm transition-all duration-300">
       <div class="flex items-center space-x-2.5">
@@ -449,7 +614,7 @@
     </div>
 
     <!-- Operasyonel Süreç ve Eskalasyon Akış Hattı (Connected Visual Workflow Stepper) -->
-    <div id="escalationFlowContainer" class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm space-y-4">
+    <div id="escalationFlowContainer" class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm space-y-4 print-avoid-break">
       <div class="flex flex-col md:flex-row md:items-center justify-between pb-3.5 border-b border-slate-100 gap-3">
         <div class="flex items-center space-x-3">
           <div class="p-2.5 rounded-xl bg-blue-600 text-white shadow-xs">
@@ -571,7 +736,7 @@
     </div>
 
     <!-- 4 Focused Executive KPIs Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div id="kpiCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print-avoid-break">
 
       <!-- 1. Çözüm Başarı Oranı -->
       <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-emerald-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
@@ -645,7 +810,7 @@
     </div>
 
     <!-- AI & Qwen LLM Executive Summary Card (Light High-Contrast Corporate) -->
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/90 relative overflow-hidden">
+    <div id="aiExecutiveSummaryCard" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/90 relative overflow-hidden print-avoid-break">
       <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div class="flex items-center space-x-3">
@@ -875,9 +1040,9 @@
     </div>
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div id="chartsGrid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Chart 1: Günlük Çağrı Hacmi & Çözüm Trendi -->
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col print-avoid-break">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h3 class="text-sm font-bold text-slate-800">Günlük Çağrı Hacmi ve Çözüm Trendi</h3>
@@ -893,7 +1058,7 @@
       </div>
 
       <!-- Chart 2: Kök Neden & SLA Uyum Dağılımı -->
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col print-avoid-break">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 class="text-sm font-bold text-slate-800">Kök Neden & Öncelik Dağılımı</h3>
@@ -930,7 +1095,7 @@
       </div>
 
       <!-- Chart 3: Kurumsal Dağılım ve OpenProject Entegrasyonu -->
-      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:col-span-2">
+      <div id="chart3Card" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:col-span-2 print-avoid-break">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 class="text-sm font-bold text-slate-800">Kurumsal Dağılım, Kök Neden ve OpenProject Akışı</h3>
@@ -1018,7 +1183,7 @@
     </div>
 
     <!-- Technician Performance Table Section -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <div id="techTableCard" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden print-avoid-break">
       <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 class="text-sm font-bold text-slate-800" id="techTableTitle">Personel Performans ve Efor Matrisi</h3>
@@ -1116,6 +1281,12 @@
           * GLPI dışa aktarımında ilk yanıt veya bekleme süresi girilmediğinde ilgili sütunlar <code>-</code> olarak gösterilir.
         </div>
       </div>
+    </div>
+
+    <!-- Dedicated Printable Executive Footer (Visible only in print) -->
+    <div id="printFooter" class="hidden print:flex pt-3 border-t border-slate-300 text-[10px] text-slate-500 justify-between items-center">
+      <span>METRİKA Operasyonel Raporlama Platformu &bull; Yönetici Değerlendirme Çıktısı</span>
+      <span>Sayfa Sonu</span>
     </div>
 
   </main>
@@ -2522,6 +2693,40 @@
     function exportExcel() {
       const url = `/api/v1/reports/${currentReportType}/export-excel?days=${currentDays}&source=${currentSource}&segment=${currentSegment}`;
       window.location.href = url;
+    }
+
+    function exportPdfReport() {
+      // 1. Dinamik Rapor Üst Bilgilerini Güncelle
+      const dateEl = document.getElementById('printReportDate');
+      const scopeEl = document.getElementById('printReportScope');
+      const titleEl = document.getElementById('printReportTitle');
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('tr-TR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      let periodText = currentDays === 0 ? 'Tüm Veri' : `Son ${currentDays} Gün`;
+      let segText = currentSegment === 'service_desk'
+        ? 'Servis Masası (L1)'
+        : (currentSegment === 'system_ops' ? 'L1 ➔ L2 Sistem & VT' : 'Tüm Operasyon (Konsolide)');
+      let reportText = currentReportType === 'qa_testing'
+        ? 'Test & QA Operasyonu'
+        : 'Hizmet Masası & Sistem';
+
+      if (dateEl) dateEl.innerText = `Rapor Tarihi: ${dateStr}`;
+      if (scopeEl) scopeEl.innerText = `Dönem: ${periodText} | Kapsam: ${segText}`;
+      if (titleEl) titleEl.innerText = `METRİKA | ${reportText} Yönetici Raporu`;
+
+      // 2. İkonların SVG render'ını tazele
+      if (window.lucide) lucide.createIcons();
+
+      // 3. Tarayıcı yazdırma & PDF motorunu başlat
+      window.print();
     }
 
     // Ad-Hoc Analytics (Qwen & Pandas) Panel & Query Logic
