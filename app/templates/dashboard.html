@@ -1197,7 +1197,10 @@
       const btnText = document.getElementById('btnAiText');
       const prevText = btnText ? btnText.innerText : '✨ Qwen ile Özet Üret';
       if (btn) btn.disabled = true;
-      if (btnText) btnText.innerText = 'Analiz Hazırlanıyor...';
+      if (btnText) {
+        btnText.innerHTML = '<span class="inline-flex items-center gap-1.5"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Qwen Düşünüyor...</span></span>';
+        if (window.lucide) lucide.createIcons();
+      }
 
       try {
         const url = `/api/v1/reports/${currentReportType}/ai-summary?days=${currentDays}&source=${currentSource}&segment=${currentSegment}`;
@@ -1208,7 +1211,13 @@
 
         const modelNameEl = document.getElementById('aiModelName');
         if (modelNameEl) {
-          modelNameEl.innerText = ai.source || 'Qwen 3.5 (122B - TÜRKSAT PAAS)';
+          if (ai.is_llm_generated) {
+            modelNameEl.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200 shadow-2xs";
+            modelNameEl.innerText = '✨ ' + (ai.source || 'Qwen 3.5 (122B)');
+          } else {
+            modelNameEl.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200";
+            modelNameEl.innerText = ai.source || 'Kural Tabanlı Analiz (Çevrimdışı)';
+          }
           modelNameEl.classList.remove('hidden');
         }
 
@@ -1242,13 +1251,15 @@
         }
         toggleAiSummaryDetails(true);
 
-        if (btnText) btnText.innerText = '✨ AI Özeti Güncellendi';
+        if (btnText) {
+          btnText.innerText = ai.is_llm_generated ? '✨ Qwen Özeti Üretildi' : 'Kural Özeti Güncellendi';
+        }
       } catch (err) {
         alert('AI Özeti alınamadı: ' + err.message);
         if (btnText) btnText.innerText = prevText;
       } finally {
         if (btn) btn.disabled = false;
-        setTimeout(() => { if (btnText) btnText.innerText = '✨ Qwen ile Özet Üret'; }, 3000);
+        setTimeout(() => { if (btnText) btnText.innerText = '✨ Qwen ile Özet Üret'; }, 4000);
       }
     }
 
