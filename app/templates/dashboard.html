@@ -490,7 +490,7 @@
               <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">%100 Hacim</span>
             </div>
           </div>
-          <p class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Gelen tüm çağrıların ilk temas noktası</p>
+          <p class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 truncate" title="Gelen tüm çağrıların ilk temas noktası">İlk temas ve karşılama</p>
         </div>
 
         <!-- Adım 2: L1 Doğrudan Çözülen (FCR) -->
@@ -509,7 +509,7 @@
               <span id="flowL1DirectRate" class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">-%</span>
             </div>
           </div>
-          <p id="flowL1DirectDetail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">L1'de doğrudan kapatılan çağrılar</p>
+          <p id="flowL1DirectDetail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 truncate" title="L1'de doğrudan kapatılan çağrılar">L1 doğrudan çözüm</p>
           <span id="kpiFcrRate" class="hidden">-%</span>
           <span id="kpiFcrCount" class="hidden">-</span>
         </div>
@@ -530,7 +530,7 @@
               <span id="flowL2Rate" class="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">-%</span>
             </div>
           </div>
-          <p id="flowL2Detail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Veritabanı ve deploy işlemleri</p>
+          <p id="flowL2Detail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 truncate" title="Veritabanı ve deploy işlemleri">Veritabanı ve deploy</p>
         </div>
 
         <!-- Adım 4: L3 Yazılım & Hata -->
@@ -549,7 +549,7 @@
               <span id="flowL3Rate" class="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">-%</span>
             </div>
           </div>
-          <p id="flowL3Detail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Yazılım ve kod analiz aktarımları</p>
+          <p id="flowL3Detail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 truncate" title="Yazılım ve kod analiz aktarımları">Yazılım ve analiz</p>
         </div>
 
         <!-- Adım 5: İş Geliştirme (Öneri) -->
@@ -564,7 +564,7 @@
               <span id="flowBizDevRate" class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">-%</span>
             </div>
           </div>
-          <p id="flowBizDevDetail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Öneri ve ek hizmet talepleri</p>
+          <p id="flowBizDevDetail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 truncate" title="Ek hizmet ve öneri talepleri">Ek hizmet ve öneri</p>
         </div>
 
       </div>
@@ -970,7 +970,7 @@
               </span>
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200/80 text-purple-700 text-xs font-medium">
                 <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
-                <span>Öneri (Ek Hizmet)</span>
+                <span>Ek Hizmet / Ek Geliştirme</span>
               </span>
             </div>
             <!-- Switch to Table View Link -->
@@ -1447,6 +1447,21 @@
 
       const elL1Dir = document.getElementById('flowL1Direct');
       const elL1DirRate = document.getElementById('flowL1DirectRate');
+      function shortenFlowTaskName(name) {
+        if (!name) return '';
+        let s = name.replace(/^BN-/, '').replace(/^Belgenet\s*/i, '').replace(/\s*Görevi$/i, '').replace(/\s*İşlemi$/i, '').replace(/\s*Sepetine İlet$/i, '').trim();
+        const low = s.toLowerCase();
+        if (low.includes('veritabanı') || low.includes('veritabani')) return 'VT';
+        if (low.includes('deploy') || low.includes('ugd')) return 'Deploy';
+        if (low.includes('yazılım') || low.includes('yazilim')) return 'Yazılım';
+        if (low.includes('hata')) return 'Hata';
+        if (low.includes('analiz')) return 'Analiz';
+        if (low.includes('öneri') || low.includes('oneri')) return 'Öneri';
+        if (low.includes('ek hizmet') || low.includes('ek gel') || low.includes('ek geliştirme')) return 'Ek Hizmet';
+        if (low.includes('iyileştirme') || low.includes('gelistirme')) return 'Geliştirme';
+        return s.length > 10 ? s.slice(0, 9) + '..' : s;
+      }
+
       const elL1DirDetail = document.getElementById('flowL1DirectDetail');
       if (elL1Dir && esc.l1_direct) {
         elL1Dir.innerText = esc.l1_direct.count || esc.l1_direct.resolved || 0;
@@ -1455,9 +1470,11 @@
           const tot = esc.l1_direct.total_unforwarded || 0;
           const res = esc.l1_direct.count || esc.l1_direct.resolved || 0;
           if (tot > 0 && tot !== res) {
-            elL1DirDetail.innerText = `OP açılmayan ${tot} çağrının ${res}'i çözüldü`;
+            elL1DirDetail.innerText = `L1 Çözüm: ${res} / ${tot}`;
+            elL1DirDetail.title = `OP açılmayan ${tot} çağrının ${res}'i L1'de çözüldü`;
           } else {
-            elL1DirDetail.innerText = "OP açılmadan L1'de çözülen";
+            elL1DirDetail.innerText = `L1 Çözüm: ${res}`;
+            elL1DirDetail.title = "OP açılmadan doğrudan L1'de çözülen çağrılar";
           }
         }
       }
@@ -1469,11 +1486,13 @@
         elL2Tot.innerText = esc.l2_transfers.count || 0;
         if (elL2Rate) elL2Rate.innerText = `%${esc.l2_transfers.rate || 0}`;
         if (elL2Detail && esc.l2_transfers.task_types) {
-          const parts = Object.entries(esc.l2_transfers.task_types)
-            .filter(([k]) => k !== 'Belirtilmemiş')
-            .map(([k, v]) => `${k.replace('BN-', '')}: ${v}`)
-            .slice(0, 2);
-          if (parts.length > 0) elL2Detail.innerText = parts.join(', ');
+          const rawEntries = Object.entries(esc.l2_transfers.task_types).filter(([k]) => k !== 'Belirtilmemiş');
+          const fullText = rawEntries.map(([k, v]) => `${k.replace('BN-', '')}: ${v}`).join(', ');
+          const shortParts = rawEntries.map(([k, v]) => `${shortenFlowTaskName(k)}: ${v}`).slice(0, 2);
+          if (shortParts.length > 0) {
+            elL2Detail.innerText = shortParts.join(', ');
+            elL2Detail.title = fullText;
+          }
         }
       }
 
@@ -1484,20 +1503,19 @@
         elL3Tot.innerText = esc.l3_transfers.count || 0;
         if (elL3Rate) elL3Rate.innerText = `%${esc.l3_transfers.rate || 0}`;
         if (elL3Detail) {
-          let parts = [];
+          let rawEntries = [];
           if (esc.l3_transfers.task_types) {
-            parts = Object.entries(esc.l3_transfers.task_types)
-              .filter(([k]) => k !== 'Belirtilmemiş')
-              .map(([k, v]) => `${k.replace('BN-', '').replace('Belgenet ', '')}: ${v}`)
-              .slice(0, 2);
+            rawEntries = Object.entries(esc.l3_transfers.task_types).filter(([k]) => k !== 'Belirtilmemiş');
           }
-          if (parts.length === 0 && esc.l3_transfers.baskets) {
-            parts = Object.entries(esc.l3_transfers.baskets)
-              .filter(([k]) => k !== 'Belirtilmemiş')
-              .map(([k, v]) => `${k.replace('BN-', '').replace(' Sepetine İlet', '')}: ${v}`)
-              .slice(0, 2);
+          if (rawEntries.length === 0 && esc.l3_transfers.baskets) {
+            rawEntries = Object.entries(esc.l3_transfers.baskets).filter(([k]) => k !== 'Belirtilmemiş');
           }
-          if (parts.length > 0) elL3Detail.innerText = parts.join(', ');
+          if (rawEntries.length > 0) {
+            const fullText = rawEntries.map(([k, v]) => `${k.replace('BN-', '')}: ${v}`).join(', ');
+            const shortParts = rawEntries.map(([k, v]) => `${shortenFlowTaskName(k)}: ${v}`).slice(0, 2);
+            elL3Detail.innerText = shortParts.join(', ');
+            elL3Detail.title = fullText;
+          }
         }
       }
 
@@ -1508,20 +1526,19 @@
         elBizDevTot.innerText = esc.business_dev_transfers.count || 0;
         if (elBizDevRate) elBizDevRate.innerText = `%${esc.business_dev_transfers.rate || 0}`;
         if (elBizDevDetail) {
-          let parts = [];
+          let rawEntries = [];
           if (esc.business_dev_transfers.task_types) {
-            parts = Object.entries(esc.business_dev_transfers.task_types)
-              .filter(([k]) => k !== 'Belirtilmemiş')
-              .map(([k, v]) => `${k.replace('BN-', '').replace('Belgenet ', '')}: ${v}`)
-              .slice(0, 2);
+            rawEntries = Object.entries(esc.business_dev_transfers.task_types).filter(([k]) => k !== 'Belirtilmemiş');
           }
-          if (parts.length === 0 && esc.business_dev_transfers.baskets) {
-            parts = Object.entries(esc.business_dev_transfers.baskets)
-              .filter(([k]) => k !== 'Belirtilmemiş')
-              .map(([k, v]) => `${k.replace('BN-', '').replace(' Sepetine İlet', '')}: ${v}`)
-              .slice(0, 2);
+          if (rawEntries.length === 0 && esc.business_dev_transfers.baskets) {
+            rawEntries = Object.entries(esc.business_dev_transfers.baskets).filter(([k]) => k !== 'Belirtilmemiş');
           }
-          if (parts.length > 0) elBizDevDetail.innerText = parts.join(', ');
+          if (rawEntries.length > 0) {
+            const fullText = rawEntries.map(([k, v]) => `${k.replace('BN-', '')}: ${v}`).join(', ');
+            const shortParts = rawEntries.map(([k, v]) => `${shortenFlowTaskName(k)}: ${v}`).slice(0, 2);
+            elBizDevDetail.innerText = shortParts.join(', ');
+            elBizDevDetail.title = fullText;
+          }
         }
       }
 
@@ -1854,7 +1871,7 @@
               borderRadius: 3
             },
             {
-              label: 'Öneri',
+              label: 'Ek Hizmet / Ek Geliştirme',
               data: suggestionData,
               backgroundColor: '#8b5cf6',
               stack: 'Stack 0',
@@ -2006,7 +2023,7 @@
       if (type === 'demand') {
         if (str.includes('Hata Talebi')) return 'Hata Talebi';
         if (str.includes('Destek Talebi')) return 'Destek Talebi';
-        if (str.includes('Ek Geliştirme') || str.includes('Ek Hizmet') || str.includes('Öneri')) return 'Öneri / Ek Hizmet';
+        if (str.includes('Ek Geliştirme') || str.includes('Ek Hizmet') || str.includes('Öneri')) return 'Ek Hizmet / Ek Geliştirme';
         return str.replace(/^Belgenet\s*/i, '');
       }
 
