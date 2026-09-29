@@ -91,10 +91,19 @@ class QwenClient:
                     msg = choice.get("message", {})
                     content = msg.get("content")
 
-                    # Handle case where Qwen spent tokens on reasoning but content was short/empty
-                    if not content and msg.get("reasoning"):
-                        logger.warning("Content empty, but reasoning present. Extracting from reasoning.")
-                        content = msg.get("reasoning")
+                    # Sanitize content: strip <think>...</think> and internal Thinking Process
+                    if content:
+                        content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
+                        if "Thinking Process:" in content:
+                            parts = re.split(r"\n\n(?=[A-ZÇĞİÖŞÜ])", content, maxsplit=1)
+                            if len(parts) > 1 and not parts[1].strip().startswith("Thinking Process:"):
+                                content = parts[1]
+                            else:
+                                content = None
+                    else:
+                        # Never expose raw internal reasoning CoT chain to users
+                        logger.info("Qwen content was empty or truncated before completion.")
+                        content = None
 
                     logger.info(f"Qwen API responded in {duration_ms:.1f} ms (Model: {self.api_model})")
                     self.last_error = None

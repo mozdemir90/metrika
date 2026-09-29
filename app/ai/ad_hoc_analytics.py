@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from typing import Any, Dict, List, Optional, Tuple
@@ -308,7 +309,7 @@ class AdHocAnalyticsEngine:
         if self.qwen.enabled:
             try:
                 llm_narrative = await self._synthesize_with_qwen(prompt, matched_count, applied_filters, group_label, counts)
-                if llm_narrative:
+                if llm_narrative and len(llm_narrative) > 20 and "Thinking Process" not in llm_narrative:
                     explanation = llm_narrative
             except Exception as e:
                 logger.warning(f"Qwen ad-hoc narrative synthesis skipped: {e}")
@@ -369,15 +370,16 @@ class AdHocAnalyticsEngine:
         """
         sys_prompt = (
             "Sen TÜRKSAT Bilişim Hizmetleri METRİKA Operasyonel Raporlama Platformu'nun Yapay Zeka Analistisin. "
+            "Düşünce sürecini (thinking process) kesinlikle çıktıya yazma. "
             "Kullanıcının sorusuna verilen gerçek Pandas istatistiklerini özetleyen, 2-3 cümlelik, profesyonel, "
-            "net ve Türkçe bir analitik özet yaz. Kesinlikle uydurma sayı verme, sadece verilen gerçek rakamları yorumla."
+            "doğrudan Türkçe bir analitik yönetici özeti yaz. Kesinlikle uydurma sayı verme, sadece verilen gerçek rakamları yorumla."
         )
         user_prompt = (
             f"Kullanıcı Sorusu: {prompt}\n"
             f"Filtreler: {', '.join(filters)}\n"
             f"Toplam Eşleşen Çağrı: {total}\n"
             f"{group_label} Dağılımı: {counts}\n\n"
-            f"Lütfen kullanıcıya doğrudan, kibar ve veri odaklı bir yönetici yanıtı ver."
+            f"Lütfen doğrudan Türkçe yönetici değerlendirmesi ver."
         )
 
         messages = [
@@ -385,5 +387,21 @@ class AdHocAnalyticsEngine:
             {"role": "user", "content": user_prompt}
         ]
 
-        resp = await self.qwen.chat_completion(messages, temperature=0.1, max_tokens=250)
-        return resp.strip() if resp else None
+        try:
+            # Enforce a strict 3-second budget for ad-hoc queries so UI stays responsive
+            resp = await asyncio.wait_for(
+                self.qwen.chat_completion(messages, temperature=0.1, max_tokens=None),
+                timeout=3.0
+            )
+            if not resp:
+                return None
+
+            # Guard against any leaked internal CoT or English reasoning
+            if any(marker in resp for marker in ["Thinking Process", "Analyze the Request", "* Role:", "* Task:", "Drafting the Response"]):
+                logger.warning("Qwen returned raw reasoning CoT instead of clean narrative; ignoring.")
+                return None
+
+            return resp.strip()
+        except (asyncio.TimeoutError, Exception) as e:
+            logger.info(f"Qwen ad-hoc synthesis skipped ({e}); using deterministic rule narrative.")
+            return None
