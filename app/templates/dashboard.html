@@ -71,36 +71,36 @@
         </div>
 
         <!-- Report Template Selector (Tabs) in Navbar -->
-        <div class="hidden lg:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
-          <button onclick="switchReport('service_desk')" id="tabReportSD" class="px-3 py-1.5 rounded-lg font-semibold bg-blue-600 text-white transition">
+        <div class="hidden lg:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs shrink-0">
+          <button onclick="switchReport('service_desk')" id="tabReportSD" class="px-3 py-1.5 rounded-lg font-semibold bg-blue-600 text-white transition whitespace-nowrap">
             Servis Masası & Sistem
           </button>
-          <button onclick="switchReport('qa_testing')" id="tabReportQA" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition">
+          <button onclick="switchReport('qa_testing')" id="tabReportQA" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap">
             Test & QA Raporu
           </button>
-          <span class="px-2.5 py-1.5 text-slate-500 cursor-not-allowed">
+          <span class="px-2.5 py-1.5 text-slate-500 cursor-not-allowed whitespace-nowrap">
             İş Geliştirme (Yakında)
           </span>
         </div>
 
         <!-- Right Quick Actions -->
-        <div class="flex items-center space-x-2 sm:space-x-3">
+        <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
           <!-- Akıllı Analist Quick Toggle -->
-          <button onclick="openAndScrollToAdHoc()" class="inline-flex items-center space-x-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 border border-indigo-700/60 transition shadow-xs" title="Akıllı Analisti Aç ve Odaklan">
-            <i data-lucide="bot" class="w-4 h-4 text-purple-300"></i>
+          <button onclick="openAndScrollToAdHoc()" class="h-9 px-3 inline-flex items-center space-x-1.5 text-xs font-semibold rounded-lg bg-indigo-950/80 hover:bg-indigo-900/90 text-indigo-200 border border-indigo-700/60 transition shadow-xs whitespace-nowrap" title="Akıllı Analisti Aç ve Odaklan">
+            <i data-lucide="bot" class="w-4 h-4 text-purple-300 shrink-0"></i>
             <span class="hidden md:inline">Akıllı Analist</span>
           </button>
 
           <!-- Excel Export Button -->
-          <button id="btnExportExcel" onclick="exportExcel()" class="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          <button id="btnExportExcel" onclick="exportExcel()" class="h-9 px-3 sm:px-4 inline-flex items-center space-x-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all focus:ring-2 focus:ring-emerald-400 focus:outline-none whitespace-nowrap">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 shrink-0"></i>
             <span class="hidden sm:inline">Kurumsal Excel İndir</span>
             <span class="sm:hidden">Excel</span>
           </button>
 
           <!-- Upload Toggle Button -->
-          <button onclick="toggleUploadModal()" class="inline-flex items-center space-x-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
-            <i data-lucide="upload" class="w-4 h-4 text-blue-400"></i>
+          <button onclick="toggleUploadModal()" class="h-9 px-3 inline-flex items-center space-x-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition shadow-xs whitespace-nowrap">
+            <i data-lucide="upload" class="w-4 h-4 text-blue-400 shrink-0"></i>
             <span class="hidden md:inline">Excel Yükle</span>
           </button>
         </div>
@@ -957,14 +957,27 @@
           <div class="relative min-h-[290px]">
             <canvas id="institutionsChart"></canvas>
           </div>
-          <div class="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-500 pt-1 border-t border-slate-50">
-            <span class="inline-flex items-center gap-1 text-slate-500">
-              <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
-              <span>Kırmızı: Hata &bull; Mavi: Destek &bull; Mor: Öneri (Ek Hizmet)</span>
-            </span>
-            <span class="text-indigo-600 cursor-pointer hover:underline font-medium" onclick="toggleInstView()">
-              Tüm kurumları tabloda filtrele &rarr;
-            </span>
+          <div class="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-100">
+            <!-- Visual Legend Badges -->
+            <div class="flex items-center flex-wrap gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-medium">
+                <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                <span>Hata</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-medium">
+                <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                <span>Destek</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200/80 text-purple-700 text-xs font-medium">
+                <span class="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
+                <span>Öneri (Ek Hizmet)</span>
+              </span>
+            </div>
+            <!-- Switch to Table View Link -->
+            <button type="button" onclick="toggleInstView()" class="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition">
+              <span>Tüm kurumları tabloda filtrele</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
           </div>
         </div>
 
@@ -1279,12 +1292,12 @@
       const segGroup = document.getElementById('segmentSelectorGroup');
 
       if (type === 'service_desk') {
-        btnSD.className = "px-3 py-1.5 rounded-lg font-semibold bg-blue-600 text-white transition";
-        btnQA.className = "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition";
+        btnSD.className = "px-3 py-1.5 rounded-lg font-semibold bg-blue-600 text-white transition whitespace-nowrap";
+        btnQA.className = "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap";
         segGroup.classList.remove('hidden');
       } else {
-        btnQA.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition";
-        btnSD.className = "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition";
+        btnQA.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition whitespace-nowrap";
+        btnSD.className = "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition whitespace-nowrap";
         segGroup.classList.add('hidden');
       }
 
