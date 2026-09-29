@@ -269,10 +269,22 @@ class AdHocAnalyticsEngine:
         if counts:
             top_key, top_val = next(iter(counts.items()))
             top_label = top_key if len(top_key) <= 22 else top_key[:20] + "..."
+            
+            top_color = "purple"
+            tk_lower = str(top_key).lower()
+            if any(w in tk_lower for w in ("hata", "bug", "arıza", "ariza")):
+                top_color = "rose"
+            elif any(w in tk_lower for w in ("destek", "support")):
+                top_color = "blue"
+            elif any(w in tk_lower for w in ("öneri", "oneri", "geliştirme", "gelistirme", "ek hizmet")):
+                top_color = "purple"
+            elif any(w in tk_lower for w in ("çözül", "cozul", "kapat")):
+                top_color = "emerald"
+
             summary_cards.append({
                 "label": f"Baskın {group_label}",
                 "value": f"{top_label} ({top_val})",
-                "color": "purple"
+                "color": top_color
             })
 
         # 7. Build Dynamic Table
@@ -286,11 +298,44 @@ class AdHocAnalyticsEngine:
             "rows": table_rows
         }
 
-        # 8. Chart Palette & Configuration
-        palette = [
-            "#2563eb", "#3b82f6", "#059669", "#10b981", "#d97706",
-            "#f59e0b", "#7c3aed", "#8b5cf6", "#e11d48", "#64748b"
+        # 8. Chart Palette & Configuration (Semantic Mapping + High-Contrast Distinct Palette)
+        SEMANTIC_COLORS = {
+            "hata": "#ef4444",      # Rose / Red for Bugs & Errors
+            "bug": "#ef4444",
+            "arıza": "#ef4444",
+            "ariza": "#ef4444",
+            "destek": "#3b82f6",    # Blue for Standard Support
+            "support": "#3b82f6",
+            "öneri": "#8b5cf6",     # Purple for Suggestion / Feature / Ek Geliştirme
+            "oneri": "#8b5cf6",
+            "geliştirme": "#8b5cf6",
+            "gelistirme": "#8b5cf6",
+            "ek hizmet": "#8b5cf6",
+            "çözüldü": "#10b981",   # Emerald for Resolved
+            "çözülen": "#10b981",
+            "kapatıldı": "#10b981",
+            "açık": "#f59e0b",      # Amber for Open / In Progress
+            "devam eden": "#f59e0b",
+            "yeni": "#06b6d4",      # Cyan for New
+            "beklemede": "#94a3b8", # Slate for Pending
+            "askıda": "#94a3b8",
+        }
+
+        DISTINCT_PALETTE = [
+            "#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444",
+            "#06b6d4", "#ec4899", "#14b8a6", "#f97316", "#6366f1",
+            "#84cc16", "#64748b"
         ]
+
+        chart_colors = []
+        for idx, lbl in enumerate(labels):
+            lbl_lower = str(lbl).lower().strip()
+            matched_color = None
+            for key, col in SEMANTIC_COLORS.items():
+                if key in lbl_lower:
+                    matched_color = col
+                    break
+            chart_colors.append(matched_color if matched_color else DISTINCT_PALETTE[idx % len(DISTINCT_PALETTE)])
 
         chart_config = {
             "has_chart": bool(labels),
@@ -298,7 +343,7 @@ class AdHocAnalyticsEngine:
             "title": f"{', '.join(applied_filters) if applied_filters else 'Operasyon'} - {group_label} Dağılımı",
             "labels": labels,
             "data": data_values,
-            "colors": palette[:len(labels)],
+            "colors": chart_colors,
             "group_label": group_label,
         }
 

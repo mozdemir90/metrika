@@ -2837,6 +2837,7 @@
             if (c.color === 'emerald') colorCls = 'bg-emerald-50 text-emerald-700 border-emerald-200';
             else if (c.color === 'purple') colorCls = 'bg-purple-50 text-purple-700 border-purple-200';
             else if (c.color === 'amber') colorCls = 'bg-amber-50 text-amber-700 border-amber-200';
+            else if (c.color === 'rose' || c.color === 'red') colorCls = 'bg-rose-50 text-rose-700 border-rose-200';
             return `
               <div class="px-2.5 py-1 rounded-lg text-xs font-semibold ${colorCls} border flex items-center gap-1.5 shadow-xs">
                 <span class="text-slate-500 font-normal">${c.label}:</span>
@@ -2852,11 +2853,17 @@
           narrativeEl.innerHTML = (data.answer_text || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         }
 
-        // 4. Dinamik Grafik
+        // 4. Renk Çözümleme ve Dinamik Grafik
+        const colors = (data.chart && data.chart.colors && data.chart.colors.length)
+          ? data.chart.colors
+          : resolveAdHocColors(data.chart ? data.chart.labels : []);
+        if (data.chart) {
+          data.chart.colors = colors;
+        }
         renderAdHocChart(data.chart);
 
         // 5. Dinamik Dağılım Tablosu
-        renderAdHocTable(data.table, data.matched_count);
+        renderAdHocTable(data.table, data.matched_count, colors);
 
         lucide.createIcons();
       } catch (err) {
@@ -2865,6 +2872,42 @@
         if (btn) btn.disabled = false;
         if (btnText) btnText.innerText = prevText;
       }
+    }
+
+    function resolveAdHocColors(labels) {
+      const semanticMap = {
+        'hata': '#ef4444',
+        'bug': '#ef4444',
+        'arıza': '#ef4444',
+        'ariza': '#ef4444',
+        'destek': '#3b82f6',
+        'support': '#3b82f6',
+        'öneri': '#8b5cf6',
+        'oneri': '#8b5cf6',
+        'geliştirme': '#8b5cf6',
+        'gelistirme': '#8b5cf6',
+        'ek hizmet': '#8b5cf6',
+        'çözüldü': '#10b981',
+        'çözülen': '#10b981',
+        'kapatıldı': '#10b981',
+        'açık': '#f59e0b',
+        'devam eden': '#f59e0b',
+        'yeni': '#06b6d4',
+        'beklemede': '#94a3b8',
+        'askıda': '#94a3b8'
+      };
+      const distinctPalette = [
+        '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444',
+        '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1',
+        '#84cc16', '#64748b'
+      ];
+      return (labels || []).map((lbl, idx) => {
+        const lower = String(lbl).toLowerCase().trim();
+        for (const [key, col] of Object.entries(semanticMap)) {
+          if (lower.includes(key)) return col;
+        }
+        return distinctPalette[idx % distinctPalette.length];
+      });
     }
 
     function renderAdHocChart(chartData) {
@@ -2883,6 +2926,7 @@
 
       const ctx = canvas.getContext('2d');
       const isDoughnut = chartData.type === 'doughnut';
+      const colors = chartData.colors || resolveAdHocColors(chartData.labels);
 
       chartInstances['adHocChart'] = new Chart(ctx, {
         type: chartData.type || 'doughnut',
@@ -2891,20 +2935,60 @@
           datasets: [{
             label: chartData.group_label || 'Adet',
             data: chartData.data,
-            backgroundColor: chartData.colors || [
-              '#2563eb', '#3b82f6', '#059669', '#10b981', '#d97706', '#f59e0b', '#7c3aed', '#8b5cf6', '#e11d48', '#64748b'
-            ],
+            backgroundColor: colors,
+            borderColor: '#ffffff',
+            borderWidth: isDoughnut ? 2.5 : 1,
             borderRadius: isDoughnut ? 0 : 6
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          cutout: isDoughnut ? '65%' : 0,
           plugins: {
             legend: {
               display: isDoughnut,
               position: 'right',
-              labels: { boxWidth: 12, font: { size: 11 } }
+              labels: {
+                boxWidth: 12,
+                boxHeight: 12,
+                borderRadius: 3,
+                useBorderRadius: true,
+                padding: 10,
+                font: { size: 11, family: 'Plus Jakarta Sans', weight: '600' },
+                generateLabels: function(chart) {
+                  const data = chart.data;
+                  if (data.labels.length && data.datasets.length) {
+                    const dataset = data.datasets[0];
+                    const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                    return data.labels.map((label, i) => {
+                      const value = dataset.data[i];
+                      const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                      return {
+                        text: `${label} (${value} - %${pct})`,
+                        fillStyle: dataset.backgroundColor[i],
+                        strokeStyle: '#ffffff',
+                        lineWidth: 1,
+                        hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i]?.hidden,
+                        index: i
+                      };
+                    });
+                  }
+                  return [];
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const dataset = context.dataset;
+                  const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                  return ` ${label}: ${value} adet (%${pct})`;
+                }
+              }
             }
           },
           scales: isDoughnut ? {} : {
@@ -2915,7 +2999,7 @@
       });
     }
 
-    function renderAdHocTable(tableData, totalCount) {
+    function renderAdHocTable(tableData, totalCount, colors = []) {
       const countBadge = document.getElementById('adHocTableCountBadge');
       if (countBadge) countBadge.innerText = `${totalCount || 0} Kayıt`;
 
@@ -2933,13 +3017,23 @@
         if (tableData.rows.length === 0) {
           tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
         } else {
-          tbody.innerHTML = tableData.rows.map(row => `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="py-2.5 px-3 text-slate-800 font-medium truncate max-w-[160px]" title="${row[0]}">${row[0]}</td>
-              <td class="py-2.5 px-3 text-right text-slate-700 font-bold">${row[1]}</td>
-              <td class="py-2.5 px-3 text-right text-indigo-600 font-bold">${row[2]}</td>
-            </tr>
-          `).join('');
+          tbody.innerHTML = tableData.rows.map((row, idx) => {
+            const color = (colors && colors[idx]) ? colors[idx] : '#3b82f6';
+            return `
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+                <td class="py-2.5 px-3 text-slate-800 font-medium truncate max-w-[170px]" title="${row[0]}">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs" style="background-color: ${color}"></span>
+                    <span class="truncate">${row[0]}</span>
+                  </div>
+                </td>
+                <td class="py-2.5 px-3 text-right text-slate-700 font-bold">${row[1]}</td>
+                <td class="py-2.5 px-3 text-right">
+                  <span class="px-2 py-0.5 rounded-md font-bold text-xs" style="background-color: ${color}18; color: ${color};">${row[2]}</span>
+                </td>
+              </tr>
+            `;
+          }).join('');
         }
       }
     }
