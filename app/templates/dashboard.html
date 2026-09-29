@@ -1141,7 +1141,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 class="text-sm font-bold text-slate-800">Kurumsal Dağılım, Kök Neden ve OpenProject Akışı</h3>
-            <p class="text-xs text-slate-500 mt-0.5 print:hidden">Grafikteki kurumlara veya tablodaki <strong>İncele</strong> butonuna tıklayarak Talep Tipi, Görev Tipi ve Sepet detaylarını görebilirsiniz.</p>
+            <p class="text-xs text-slate-500 mt-0.5 print:hidden">Kurum satırlarına tıklayarak sepet dağılımını açabilir; <strong>İncele</strong> butonuyla çağrı ve görev detaylarını görebilirsiniz.</p>
             <p class="hidden print:block text-xs text-slate-500 mt-0.5">Kurum bazlı çağrı hacmi, kök neden (hata/destek/öneri) dağılımı ve eskalasyon durumları.</p>
           </div>
           <div class="flex items-center space-x-2">
@@ -2197,16 +2197,155 @@
         return;
       }
 
-      tbody.innerHTML = displayList.map(inst => {
-        const opCount = inst.op_forwarded_count !== undefined ? inst.op_forwarded_count : (inst.openproject_summary ? inst.openproject_summary.forwarded_count : 0);
+      const themeMap = {
+        blue: {
+          cardBorder: 'border-blue-200/80',
+          badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
+          textColor: 'text-blue-700',
+          barBg: 'bg-blue-500',
+          icon: 'server'
+        },
+        rose: {
+          cardBorder: 'border-rose-200/80',
+          badgeBg: 'bg-rose-50 text-rose-700 border-rose-200',
+          textColor: 'text-rose-700',
+          barBg: 'bg-rose-500',
+          icon: 'alert-circle'
+        },
+        purple: {
+          cardBorder: 'border-purple-200/80',
+          badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
+          textColor: 'text-purple-700',
+          barBg: 'bg-purple-500',
+          icon: 'database'
+        },
+        amber: {
+          cardBorder: 'border-amber-200/80',
+          badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
+          textColor: 'text-amber-700',
+          barBg: 'bg-amber-500',
+          icon: 'lightbulb'
+        },
+        emerald: {
+          cardBorder: 'border-emerald-200/80',
+          badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          textColor: 'text-emerald-700',
+          barBg: 'bg-emerald-500',
+          icon: 'headphones'
+        },
+        cyan: {
+          cardBorder: 'border-cyan-200/80',
+          badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+          textColor: 'text-cyan-700',
+          barBg: 'bg-cyan-500',
+          icon: 'search'
+        },
+        indigo: {
+          cardBorder: 'border-indigo-200/80',
+          badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+          textColor: 'text-indigo-700',
+          barBg: 'bg-indigo-500',
+          icon: 'layers'
+        }
+      };
+
+      tbody.innerHTML = displayList.map((inst, idx) => {
+        const opSummary = inst.openproject_summary || {};
+        const opCount = inst.op_forwarded_count !== undefined ? inst.op_forwarded_count : (opSummary.forwarded_count || 0);
         const opRate = inst.total_count > 0 ? Math.round((opCount / inst.total_count) * 100) : 0;
         const safeName = (inst.institution || '').replace(/'/g, "\\'");
 
+        // Collect baskets
+        const rawBaskets = opSummary.baskets || {};
+        const localCount = opSummary.local_count !== undefined 
+          ? opSummary.local_count 
+          : Math.max(0, (inst.total_count || 0) - opCount);
+
+        let basketItems = [];
+
+        // 1. L1 Doğrudan Çözülenler (eğer varsa)
+        if (localCount > 0) {
+          const l1Rate = inst.total_count > 0 ? Math.round((localCount / inst.total_count) * 100) : 0;
+          basketItems.push({
+            name: 'L1 Servis Masası (Doğrudan Çözüm)',
+            count: localCount,
+            rate: l1Rate,
+            theme: 'emerald'
+          });
+        }
+
+        // 2. OpenProject Sepetleri
+        Object.entries(rawBaskets).forEach(([rawName, count]) => {
+          if (rawName === 'Belirtilmemiş' && count === 0) return;
+          const cleanName = cleanOpLabel(rawName, 'basket');
+          const rate = inst.total_count > 0 ? Math.round((count / inst.total_count) * 100) : 0;
+
+          let theme = 'indigo';
+          const low = cleanName.toLowerCase();
+          if (low.includes('hata')) theme = 'rose';
+          else if (low.includes('sistem')) theme = 'blue';
+          else if (low.includes('veritabanı') || low.includes('veritabani')) theme = 'purple';
+          else if (low.includes('öneri') || low.includes('oneri') || low.includes('geliştirme') || low.includes('hizmet')) theme = 'amber';
+          else if (low.includes('analiz') || low.includes('test')) theme = 'cyan';
+
+          basketItems.push({
+            name: cleanName,
+            count: count,
+            rate: rate,
+            theme: theme
+          });
+        });
+
+        // Sort descending by count
+        basketItems.sort((a, b) => b.count - a.count);
+
+        let basketCardsHtml = '';
+        if (basketItems.length === 0) {
+          basketCardsHtml = `
+            <div class="py-3 px-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs text-center">
+              Bu kuruma ait sepet yönlendirme kaydı bulunmamaktadır.
+            </div>
+          `;
+        } else {
+          basketCardsHtml = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+              ${basketItems.map(item => {
+                const t = themeMap[item.theme] || themeMap.indigo;
+                return `
+                  <div class="p-3 rounded-xl border ${t.cardBorder} bg-white shadow-2xs hover:shadow-xs transition flex flex-col justify-between">
+                    <div class="flex items-center justify-between gap-1.5 mb-2">
+                      <div class="flex items-center space-x-1.5 min-w-0">
+                        <i data-lucide="${t.icon}" class="w-3.5 h-3.5 ${t.textColor} shrink-0"></i>
+                        <span class="text-xs font-bold text-slate-800 truncate" title="${item.name}">${item.name}</span>
+                      </div>
+                      <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${t.badgeBg} border shrink-0">
+                        %${item.rate}
+                      </span>
+                    </div>
+                    <div class="flex items-baseline justify-between text-xs mt-1">
+                      <span class="text-base font-black ${t.textColor}">${item.count} <span class="text-[10px] font-medium text-slate-500">çağrı</span></span>
+                      <span class="text-[11px] font-medium text-slate-400">${item.count} / ${inst.total_count}</span>
+                    </div>
+                    <!-- Mini progress bar -->
+                    <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2.5 overflow-hidden">
+                      <div class="${t.barBg} h-1.5 rounded-full transition-all duration-500" style="width: ${Math.max(item.rate, 5)}%"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
         return `
-          <tr class="hover:bg-slate-50 transition group cursor-pointer" onclick="openInstitutionDrillDown('${safeName}')">
-            <td class="py-2.5 px-3 font-semibold text-slate-800 flex items-center gap-1.5">
-              <i data-lucide="building-2" class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition"></i>
-              <span class="group-hover:text-blue-600 transition">${inst.institution}</span>
+          <!-- Main Institution Row -->
+          <tr id="instMainRow_${idx}" class="hover:bg-slate-50/80 transition group cursor-pointer select-none" onclick="toggleInstitutionBasketRow(${idx})">
+            <td class="py-2.5 px-3 font-semibold text-slate-800 flex items-center gap-2">
+              <span class="p-1 rounded-md text-slate-400 group-hover:text-blue-600 transition" title="Sepet Dağılımını Göster/Gizle">
+                <i id="instChevron_${idx}" data-lucide="chevron-right" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+              </span>
+              <i data-lucide="building-2" class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition shrink-0"></i>
+              <span class="group-hover:text-blue-600 transition truncate" title="${inst.institution}">${inst.institution}</span>
             </td>
             <td class="py-2.5 px-2 text-center font-bold text-slate-900">${inst.total_count}</td>
             <td class="py-2.5 px-2 text-center font-medium text-rose-600">${inst.bug_count || 0}</td>
@@ -2222,16 +2361,90 @@
                 : `<span class="text-slate-400">-</span>`}
             </td>
             <td class="py-2.5 px-3 text-right">
-              <button onclick="event.stopPropagation(); openInstitutionDrillDown('${safeName}')" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition border border-indigo-200/60 shadow-sm">
+              <button onclick="event.stopPropagation(); openInstitutionDrillDown('${safeName}')" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition border border-indigo-200/60 shadow-sm cursor-pointer" title="Detaylı Analiz & Çağrı Listesi">
                 <span>İncele</span>
                 <i data-lucide="arrow-right" class="w-3 h-3"></i>
               </button>
+            </td>
+          </tr>
+
+          <!-- Expandable Basket Breakdown Sub-Row (Closed by default) -->
+          <tr id="instSubRow_${idx}" class="hidden bg-slate-50/70 border-b border-slate-200 transition-all">
+            <td colspan="7" class="p-3 sm:px-5">
+              <div class="rounded-xl border border-slate-200/90 bg-slate-50/90 p-3.5 space-y-3 shadow-inner">
+                <!-- Sub-row Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/70">
+                  <div class="flex items-center space-x-2">
+                    <div class="p-1.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/60 shadow-2xs">
+                      <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-slate-900">${inst.institution} - Sepet / Kuyruk Dağılımı</h4>
+                      <p class="text-[10px] text-slate-500">Bu kuruma ait toplam ${inst.total_count} çağrının ekip ve kuyruk bazlı yönlendirmesi</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 text-[11px]">
+                    <span class="px-2 py-0.5 rounded-md bg-white text-slate-700 font-semibold border border-slate-200 shadow-2xs">
+                      Toplam: ${inst.total_count} Çağrı
+                    </span>
+                    ${opCount > 0 ? `
+                      <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold border border-amber-200 shadow-2xs">
+                        OP İletilen: ${opCount} (%${opRate})
+                      </span>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <!-- Cards Grid -->
+                ${basketCardsHtml}
+
+                <!-- Sub-row Footer Hint & Action -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400 pt-1">
+                  <span class="flex items-center gap-1.5">
+                    <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-500 shrink-0"></i>
+                    <span>Tüm çağrı numaraları, konu başlıkları ve teknisyen detayları için:</span>
+                  </span>
+                  <button onclick="openInstitutionDrillDown('${safeName}')" class="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1 cursor-pointer self-end sm:self-auto">
+                    <span>Tam Çağrı Listesini Aç (${inst.total_count} Çağrı)</span>
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
 
       lucide.createIcons();
+    }
+
+    function toggleInstitutionBasketRow(idx) {
+      const subRow = document.getElementById(`instSubRow_${idx}`);
+      const chevron = document.getElementById(`instChevron_${idx}`);
+      const mainRow = document.getElementById(`instMainRow_${idx}`);
+      if (!subRow) return;
+
+      const isHidden = subRow.classList.contains('hidden');
+      if (isHidden) {
+        subRow.classList.remove('hidden');
+        if (chevron) {
+          chevron.classList.add('rotate-90', 'text-blue-600');
+          chevron.classList.remove('text-slate-400');
+        }
+        if (mainRow) {
+          mainRow.classList.add('bg-slate-100/70');
+        }
+        if (window.lucide) lucide.createIcons();
+      } else {
+        subRow.classList.add('hidden');
+        if (chevron) {
+          chevron.classList.remove('rotate-90', 'text-blue-600');
+          chevron.classList.add('text-slate-400');
+        }
+        if (mainRow) {
+          mainRow.classList.remove('bg-slate-100/70');
+        }
+      }
     }
 
     // Helper function to clean and humanize OpenProject labels
