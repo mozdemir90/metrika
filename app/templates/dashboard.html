@@ -70,6 +70,8 @@
       #uploadModal,
       #institutionDetailModal,
       #mappingAlert,
+      #aiQuickSummaryBar,
+      .interactive-hint,
       #adHocToggleBar,
       #adHocPanelBody,
       #btnBackToTop,
@@ -586,11 +588,11 @@
     <div id="printHeader" class="hidden print:block mb-5 pb-4 border-b-2 border-slate-800">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-extrabold text-xl shadow-xs">
-            M
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-xs">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
           </div>
           <div>
-            <h1 id="printReportTitle" class="text-xl font-extrabold text-slate-900 tracking-tight">METRİKA | Servis Masası Yönetici Raporu</h1>
+            <h1 id="printReportTitle" class="text-xl font-extrabold text-slate-900 tracking-tight">METRİKA | Servis Masası & Sistem Yönetici Raporu</h1>
             <p class="text-xs text-slate-600">Operasyonel Metrik ve Performans Yönetim Özeti (Executive Brief)</p>
           </div>
         </div>
@@ -841,11 +843,11 @@
         </div>
       </div>
 
-      <!-- Quick Executive Highlight Bar (Always Visible, Concise) -->
+      <!-- Quick Executive Highlight Bar (Shown only when full narrative not available, concise teaser) -->
       <div id="aiQuickSummaryBar" class="mt-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-gradient-to-r from-slate-50 via-indigo-50/40 to-slate-50 border border-slate-200/80 text-xs">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="w-2 h-2 rounded-full bg-indigo-600 shrink-0 animate-ping"></span>
-          <p id="aiQuickSummaryText" class="text-slate-700 font-medium truncate">
+          <p id="aiQuickSummaryText" class="text-slate-700 font-medium">
             Yapay zeka operasyonel metrikleri analiz ediyor...
           </p>
         </div>
@@ -855,9 +857,18 @@
         </button>
       </div>
 
-      <!-- Executive Narrative Banner (If generated) -->
-      <div id="aiExecutiveNarrativeContainer" class="hidden mt-3 p-3.5 rounded-xl bg-indigo-50/50 border border-indigo-100/80 text-xs text-slate-800 leading-relaxed font-medium">
-        <p id="aiExecutiveNarrative"></p>
+      <!-- Executive Narrative Banner (Primary narrative box) -->
+      <div id="aiExecutiveNarrativeContainer" class="hidden mt-3.5 p-4 rounded-xl bg-gradient-to-r from-indigo-50/70 via-blue-50/40 to-slate-50 border border-indigo-100 text-xs text-slate-800 leading-relaxed shadow-2xs">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-start gap-2.5 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-1.5"></span>
+            <p id="aiExecutiveNarrative" class="font-medium text-slate-800 leading-relaxed"></p>
+          </div>
+          <button onclick="toggleAiSummaryDetails(true)" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px] shrink-0 inline-flex items-center gap-1 self-start print:hidden">
+            <span>Aksiyon Planını İncele</span>
+            <i data-lucide="arrow-right" class="w-3 h-3"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Detailed 3-Column Content (Collapsible - Closed by default for clean fold, opens on toggle or LLM generation) -->
@@ -1099,10 +1110,11 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 class="text-sm font-bold text-slate-800">Kurumsal Dağılım, Kök Neden ve OpenProject Akışı</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Grafikteki kurumlara veya tablodaki <strong>İncele</strong> butonuna tıklayarak Talep Tipi, Görev Tipi ve Sepet detaylarını görebilirsiniz.</p>
+            <p class="text-xs text-slate-500 mt-0.5 print:hidden">Grafikteki kurumlara veya tablodaki <strong>İncele</strong> butonuna tıklayarak Talep Tipi, Görev Tipi ve Sepet detaylarını görebilirsiniz.</p>
+            <p class="hidden print:block text-xs text-slate-500 mt-0.5">Kurum bazlı çağrı hacmi, kök neden (hata/destek/öneri) dağılımı ve eskalasyon durumları.</p>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span class="hidden sm:inline-flex print:hidden items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 interactive-hint">
               <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-indigo-600"></i>
               <span>Çubuğa tıklayarak kurum analizi açın</span>
             </span>
@@ -1381,9 +1393,14 @@
 
         const narrativeEl = document.getElementById('aiExecutiveNarrative');
         const narrativeContainer = document.getElementById('aiExecutiveNarrativeContainer');
+        const quickBar = document.getElementById('aiQuickSummaryBar');
         if (ai.executive_summary) {
           narrativeEl.innerText = ai.executive_summary;
           narrativeContainer.classList.remove('hidden');
+          if (quickBar) quickBar.classList.add('hidden');
+        } else {
+          narrativeContainer.classList.add('hidden');
+          if (quickBar) quickBar.classList.remove('hidden');
         }
 
         if (ai.observations && ai.observations.length > 0) {
@@ -1397,14 +1414,13 @@
         }
 
         const quickEl = document.getElementById('aiQuickSummaryText');
-        if (quickEl) {
-          if (ai.executive_summary) {
-            const firstSentence = ai.executive_summary.split('.')[0].trim();
-            quickEl.innerText = firstSentence.endsWith('.') ? firstSentence : firstSentence + '.';
-          } else if (ai.alerts && ai.alerts.length > 0) {
-            quickEl.innerText = ai.alerts[0];
+        if (quickEl && (!ai.executive_summary || (quickBar && !quickBar.classList.contains('hidden')))) {
+          if (ai.alerts && ai.alerts.length > 0) {
+            quickEl.innerHTML = `<span class="font-semibold text-rose-600">Öncelikli Uyarı:</span> ${ai.alerts[0]}`;
           } else if (ai.observations && ai.observations.length > 0) {
             quickEl.innerText = ai.observations[0];
+          } else {
+            quickEl.innerText = 'Operasyonel göstergeler normal standartlarda seyretmektedir.';
           }
         }
         toggleAiSummaryDetails(true);
@@ -1741,11 +1757,14 @@
 
       const narrativeEl = document.getElementById('aiExecutiveNarrative');
       const narrativeContainer = document.getElementById('aiExecutiveNarrativeContainer');
+      const quickBar = document.getElementById('aiQuickSummaryBar');
       if (ai.executive_summary) {
         narrativeEl.innerText = ai.executive_summary;
         narrativeContainer.classList.remove('hidden');
+        if (quickBar) quickBar.classList.add('hidden');
       } else {
         narrativeContainer.classList.add('hidden');
+        if (quickBar) quickBar.classList.remove('hidden');
       }
 
       const obsList = document.getElementById('aiObservationsList');
@@ -1767,13 +1786,10 @@
       }
       recsList.innerHTML = recsHtml || '<li>Mevcut süreç standartlara uygundur.</li>';
 
-      // Populate Quick Executive Highlight Bar
+      // Populate Quick Executive Highlight Bar if visible
       const quickEl = document.getElementById('aiQuickSummaryText');
-      if (quickEl) {
-        if (ai.executive_summary) {
-          const firstSentence = ai.executive_summary.split('.')[0].trim();
-          quickEl.innerText = firstSentence.endsWith('.') ? firstSentence : firstSentence + '.';
-        } else if (ai.alerts && ai.alerts.length > 0) {
+      if (quickEl && (!ai.executive_summary || (quickBar && !quickBar.classList.contains('hidden')))) {
+        if (ai.alerts && ai.alerts.length > 0) {
           quickEl.innerHTML = `<span class="font-semibold text-rose-600">Öncelikli Uyarı:</span> ${ai.alerts[0]}`;
         } else if (ai.observations && ai.observations.length > 0) {
           quickEl.innerText = ai.observations[0];
@@ -2716,7 +2732,7 @@
         : (currentSegment === 'system_ops' ? 'L1 ➔ L2 Sistem & VT' : 'Tüm Operasyon (Konsolide)');
       let reportText = currentReportType === 'qa_testing'
         ? 'Test & QA Operasyonu'
-        : 'Hizmet Masası & Sistem';
+        : 'Servis Masası & Sistem';
 
       if (dateEl) dateEl.innerText = `Rapor Tarihi: ${dateStr}`;
       if (scopeEl) scopeEl.innerText = `Dönem: ${periodText} | Kapsam: ${segText}`;

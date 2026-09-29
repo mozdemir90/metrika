@@ -72,7 +72,7 @@ class ExecutiveInsightsEngine:
         # 2. Key Observations
         observations: List[str] = [
             f"İncelenen dönemde toplam {total} adet çağrı işlenmiş olup {resolved} adedi (%{res_rate}) sonuçlandırılmış, {open_count} çağrı aktif durumdadır.",
-            f"Ortalama ilk müdahale süresi (MTTA) {avg_mtta} dakika, personelin fiili net çalışma süresi ortalama {avg_net_mttr} saattir.",
+            f"Ortalama ilk müdahale süresi {avg_mtta} dakika, personelin fiili net çalışma süresi ortalama {avg_net_mttr} saattir.",
         ]
 
         if avg_ext_wait > 3.0:
@@ -82,11 +82,11 @@ class ExecutiveInsightsEngine:
 
         if fcr >= 25.0:
             observations.append(
-                f"İlk Temasta Çözüm (FCR) oranı %{fcr} seviyesindedir; çağrılar üst ekibe veya OpenProject'e aktarılmadan doğrudan birinci hatta sonuçlandırılmıştır."
+                f"Doğrudan Çözüm oranı %{fcr} seviyesindedir; çağrılar üst ekibe veya OpenProject'e aktarılmadan doğrudan birinci hatta sonuçlandırılmıştır."
             )
         else:
             observations.append(
-                f"L1 doğrudan kapatma (FCR) oranı %{fcr} seviyesindedir; 2. seviyeye eskalasyon oranını azaltmak için L1 bilgi tabanının güçlendirilmesi değerlendirilebilir."
+                f"Doğrudan Çözüm oranı %{fcr} seviyesindedir; 2. seviyeye eskalasyon oranını azaltmak için L1 bilgi tabanının güçlendirilmesi değerlendirilebilir."
             )
 
         # 3. Risk and Alerts
@@ -107,7 +107,7 @@ class ExecutiveInsightsEngine:
             immediate_actions.append(f"Hata oranı yüksek çıkan kurumlara ({', '.join(high_bug_inst[:2])}) acil teknik inceleme başlatılması.")
 
         strategic_actions: List[str] = [
-            "İlk Temasta Çözüm (FCR) oranını yükseltmek adına L1 servis masası için güncel çağrı çözüm rehberleri hazırlanması.",
+            "Doğrudan Çözüm oranını yükseltmek adına L1 servis masası için güncel çağrı çözüm rehberleri hazırlanması.",
             "Kurum bekleme sürelerinin dondurulmasını kurumsal SLA protokollerine resmi olarak bağlayacak süreç tanımlarının yapılması.",
         ]
 
@@ -123,9 +123,9 @@ class ExecutiveInsightsEngine:
             "health_status": health_status,
             "health_color": health_color,
             "executive_summary": (
-                f"Sistem Masası operasyonunda işlenen {total} çağrının %{res_rate} oranı başarıyla çözüme kavuşturulmuştur. "
-                f"Ortalama ilk yanıt süresi {avg_mtta} dk ve ortalama net çözüm süresi {avg_net_mttr} saattir. "
-                f"Dış kurumsal bekleme sürelerinin ayrıştırılması sayesinde ekip eforu şeffaf olarak yansıtılmaktadır."
+                f"Servis Masası & Sistem operasyonunda incelenen toplam {total} çağrının %{res_rate}'i başarıyla çözüme kavuşturulmuştur. "
+                f"Ortalama ilk yanıt süresi {avg_mtta} dakika ve personelin ortalama net çalışma eforu {avg_net_mttr} saattir. "
+                f"Dış kurumsal bekleme sürelerinin ayrıştırılması sayesinde operasyonel ekip performansı şeffaf olarak yansıtılmaktadır."
             ),
             "observations": observations,
             "alerts": alerts,
