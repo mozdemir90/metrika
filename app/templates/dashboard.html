@@ -1087,6 +1087,11 @@
 
   </main>
 
+  <!-- Floating Back to Top Button -->
+  <button id="btnBackToTop" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="hidden fixed bottom-6 right-6 p-2.5 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white shadow-lg backdrop-blur transition-all duration-300 z-40 cursor-pointer" title="Sayfa Başına Dön">
+    <i data-lucide="arrow-up" class="w-4 h-4"></i>
+  </button>
+
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -1111,6 +1116,16 @@
       updateSourceBadge();
       lucide.createIcons();
       fetchData();
+
+      window.addEventListener('scroll', () => {
+        const btn = document.getElementById('btnBackToTop');
+        if (!btn) return;
+        if (window.scrollY > 350) {
+          btn.classList.remove('hidden');
+        } else {
+          btn.classList.add('hidden');
+        }
+      });
 
       const adHocInput = document.getElementById('adHocQueryInput');
       if (adHocInput) {
