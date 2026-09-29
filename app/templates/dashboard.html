@@ -655,7 +655,6 @@
           <div>
             <div class="flex items-center gap-2">
               <h2 class="text-xs sm:text-sm font-bold text-slate-900 tracking-wide uppercase">METRİKA Akıllı Yönetici Özeti</h2>
-              <span id="aiModelName" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100"></span>
             </div>
             <p class="text-[11px] text-slate-500 mt-0.5">Operasyonel Darboğazlar ve Proaktif Çözüm Önerileri</p>
           </div>
@@ -1209,18 +1208,6 @@
         const data = await resp.json();
         const ai = data.executive_insights || {};
 
-        const modelNameEl = document.getElementById('aiModelName');
-        if (modelNameEl) {
-          if (ai.is_llm_generated) {
-            modelNameEl.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200 shadow-2xs";
-            modelNameEl.innerText = '✨ ' + (ai.source || 'Qwen 3.5 (122B)');
-          } else {
-            modelNameEl.className = "text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200";
-            modelNameEl.innerText = ai.source || 'Kural Tabanlı Analiz (Çevrimdışı)';
-          }
-          modelNameEl.classList.remove('hidden');
-        }
-
         const narrativeEl = document.getElementById('aiExecutiveNarrative');
         const narrativeContainer = document.getElementById('aiExecutiveNarrativeContainer');
         if (ai.executive_summary) {
@@ -1579,17 +1566,6 @@
         healthBadge.className = 'self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm';
       } else {
         healthBadge.className = 'self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm';
-      }
-
-      const modelNameEl = document.getElementById('aiModelName');
-      if (modelNameEl) {
-        if (ai.source && (ai.source.includes('Qwen') || ai.source.includes('PAAS') || ai.source.includes('LLM'))) {
-          modelNameEl.innerText = ai.source;
-          modelNameEl.classList.remove('hidden');
-        } else {
-          modelNameEl.classList.add('hidden');
-          modelNameEl.innerText = '';
-        }
       }
 
       const narrativeEl = document.getElementById('aiExecutiveNarrative');
