@@ -628,57 +628,84 @@
       <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
         <div class="flex items-center space-x-3">
-          <div class="p-2.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+          <div class="p-2.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm shrink-0">
             <i data-lucide="sparkles" class="w-5 h-5"></i>
           </div>
           <div>
-            <h2 class="text-sm font-bold text-slate-900 tracking-wide">METRİKA AKILLI YÖNETİCİ ÖZETİ & OPERASYONEL AKSİYONLAR</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Operasyonel Darboğazlar ve Proaktif Çözüm Önerileri</p>
+            <div class="flex items-center gap-2">
+              <h2 class="text-xs sm:text-sm font-bold text-slate-900 tracking-wide uppercase">METRİKA Akıllı Yönetici Özeti</h2>
+              <span id="aiModelName" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Qwen 3.5 (122B)</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-0.5">Operasyonel Darboğazlar ve Proaktif Çözüm Önerileri</p>
           </div>
         </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="generateLlmSummary()" id="btnGenerateAi" title="Qwen LLM ile derinlemesine yapay zeka analizi üret" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition gap-1.5 shadow-xs">
+
+        <div class="flex items-center space-x-2 self-start sm:self-auto">
+          <button onclick="generateLlmSummary()" id="btnGenerateAi" title="Qwen LLM ile derinlemesine yapay zeka analizi üret" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition gap-1.5 shadow-xs cursor-pointer">
             <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
             <span id="btnAiText">✨ Qwen ile Özet Üret</span>
           </button>
-          <div id="aiHealthBadge" class="self-start sm:self-auto inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+          <div id="aiHealthBadge" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
             Durum Analiz Ediliyor
           </div>
+          <!-- Toggle Button for Expand / Collapse -->
+          <button onclick="toggleAiSummaryDetails()" id="btnAiDetailsToggle" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 transition shadow-2xs">
+            <span id="aiDetailsToggleText">Detayları Aç</span>
+            <i id="aiDetailsChevron" data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+          </button>
         </div>
       </div>
 
-      <!-- Executive Narrative Banner -->
-      <div id="aiExecutiveNarrativeContainer" class="hidden mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-sm text-slate-800 leading-relaxed font-medium">
+      <!-- Quick Executive Highlight Bar (Always Visible, Concise) -->
+      <div id="aiQuickSummaryBar" class="mt-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-gradient-to-r from-slate-50 via-indigo-50/40 to-slate-50 border border-slate-200/80 text-xs">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <span class="w-2 h-2 rounded-full bg-indigo-600 shrink-0 animate-ping"></span>
+          <p id="aiQuickSummaryText" class="text-slate-700 font-medium truncate">
+            Yapay zeka operasyonel metrikleri analiz ediyor...
+          </p>
+        </div>
+        <button onclick="toggleAiSummaryDetails(true)" class="text-indigo-600 hover:text-indigo-800 font-semibold text-[11px] shrink-0 flex items-center gap-1 self-end md:self-auto">
+          <span>Aksiyon Planını İncele</span>
+          <i data-lucide="arrow-right" class="w-3 h-3"></i>
+        </button>
+      </div>
+
+      <!-- Executive Narrative Banner (If generated) -->
+      <div id="aiExecutiveNarrativeContainer" class="hidden mt-3 p-3.5 rounded-xl bg-indigo-50/50 border border-indigo-100/80 text-xs text-slate-800 leading-relaxed font-medium">
         <p id="aiExecutiveNarrative"></p>
       </div>
 
-      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-        <div class="bg-blue-50/50 rounded-xl p-4 border border-blue-100 shadow-xs">
+      <!-- Detailed 3-Column Content (Collapsible - Closed by default for clean fold, opens on toggle or LLM generation) -->
+      <div id="aiSummaryDetailsContainer" class="hidden mt-4 pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs transition-all duration-300">
+        <!-- Column 1: Stratejik Gözlemler -->
+        <div class="bg-blue-50/50 rounded-xl p-4 border border-blue-100 shadow-xs flex flex-col">
           <div class="flex items-center space-x-2 text-blue-900 font-bold mb-2.5">
             <i data-lucide="eye" class="w-4 h-4 text-blue-600"></i>
             <span>Stratejik Gözlemler</span>
           </div>
-          <ul id="aiObservationsList" class="space-y-2 text-slate-700 font-medium leading-snug">
+          <ul id="aiObservationsList" class="space-y-2 text-slate-700 font-medium leading-snug flex-1">
             <li>Veriler yükleniyor...</li>
           </ul>
         </div>
 
-        <div class="bg-amber-50/50 rounded-xl p-4 border border-amber-100 shadow-xs">
+        <!-- Column 2: Kritik Eşikler & Uyarılar -->
+        <div class="bg-amber-50/50 rounded-xl p-4 border border-amber-100 shadow-xs flex flex-col">
           <div class="flex items-center space-x-2 text-amber-900 font-bold mb-2.5">
             <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
             <span>Kritik Eşikler & Uyarılar</span>
           </div>
-          <ul id="aiAlertsList" class="space-y-2 text-slate-700 font-medium leading-snug">
+          <ul id="aiAlertsList" class="space-y-2 text-slate-700 font-medium leading-snug flex-1">
             <li>Kontrol ediliyor...</li>
           </ul>
         </div>
 
-        <div class="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100 shadow-xs">
+        <!-- Column 3: Önerilen Aksiyon Planı -->
+        <div class="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100 shadow-xs flex flex-col">
           <div class="flex items-center space-x-2 text-emerald-900 font-bold mb-2.5">
             <i data-lucide="lightbulb" class="w-4 h-4 text-emerald-600"></i>
             <span>Önerilen Aksiyon Planı</span>
           </div>
-          <ul id="aiRecsList" class="space-y-2 text-slate-700 font-medium leading-snug">
+          <ul id="aiRecsList" class="space-y-2 text-slate-700 font-medium leading-snug flex-1">
             <li>Hazırlanıyor...</li>
           </ul>
         </div>
@@ -1032,6 +1059,26 @@
       }
     });
 
+    function toggleAiSummaryDetails(forceOpen = null) {
+      const container = document.getElementById('aiSummaryDetailsContainer');
+      const toggleText = document.getElementById('aiDetailsToggleText');
+      const chevron = document.getElementById('aiDetailsChevron');
+      if (!container) return;
+
+      const isHidden = container.classList.contains('hidden');
+      const shouldOpen = forceOpen !== null ? forceOpen : isHidden;
+
+      if (shouldOpen) {
+        container.classList.remove('hidden');
+        if (toggleText) toggleText.innerText = 'Detayları Gizle';
+        if (chevron) chevron.classList.add('rotate-180');
+      } else {
+        container.classList.add('hidden');
+        if (toggleText) toggleText.innerText = 'Detayları Aç';
+        if (chevron) chevron.classList.remove('rotate-180');
+      }
+    }
+
     async function generateLlmSummary() {
       const btn = document.getElementById('btnGenerateAi');
       const btnText = document.getElementById('btnAiText');
@@ -1065,6 +1112,19 @@
         if (ai.recommendations && ai.recommendations.length > 0) {
           document.getElementById('aiRecsList').innerHTML = ai.recommendations.map(r => `<li>• ${r}</li>`).join('');
         }
+
+        const quickEl = document.getElementById('aiQuickSummaryText');
+        if (quickEl) {
+          if (ai.executive_summary) {
+            const firstSentence = ai.executive_summary.split('.')[0].trim();
+            quickEl.innerText = firstSentence.endsWith('.') ? firstSentence : firstSentence + '.';
+          } else if (ai.alerts && ai.alerts.length > 0) {
+            quickEl.innerText = ai.alerts[0];
+          } else if (ai.observations && ai.observations.length > 0) {
+            quickEl.innerText = ai.observations[0];
+          }
+        }
+        toggleAiSummaryDetails(true);
 
         if (btnText) btnText.innerText = '✨ AI Özeti Güncellendi';
       } catch (err) {
@@ -1394,6 +1454,21 @@
         recsHtml = ai.recommendations.map(r => `<li>• ${r}</li>`).join('');
       }
       recsList.innerHTML = recsHtml || '<li>Mevcut süreç standartlara uygundur.</li>';
+
+      // Populate Quick Executive Highlight Bar
+      const quickEl = document.getElementById('aiQuickSummaryText');
+      if (quickEl) {
+        if (ai.executive_summary) {
+          const firstSentence = ai.executive_summary.split('.')[0].trim();
+          quickEl.innerText = firstSentence.endsWith('.') ? firstSentence : firstSentence + '.';
+        } else if (ai.alerts && ai.alerts.length > 0) {
+          quickEl.innerHTML = `<span class="font-semibold text-rose-600">Öncelikli Uyarı:</span> ${ai.alerts[0]}`;
+        } else if (ai.observations && ai.observations.length > 0) {
+          quickEl.innerText = ai.observations[0];
+        } else {
+          quickEl.innerText = 'Operasyonel göstergeler normal standartlarda seyretmektedir.';
+        }
+      }
 
       // Cache institutions data
       window.allInstitutionsData = data.all_institutions || data.top_institutions || [];
