@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metrika-config
+  namespace: metrika
+  labels:
+    app: metrika
+data:
+  ENVIRONMENT: "production"
+  GLPI_URL: "http://glpi.belgenet.local/apirest.php"
+  GLPI_TIMEOUT_SECONDS: "15.0"
+  DEFAULT_REPORT_DAYS: "7"
+  FALLBACK_TO_MOCK: "true"
+  ON_PREM_LLM_URL: "http://ollama-service.ai.svc.cluster.local:11434/v1"
+  ON_PREM_LLM_MODEL: "mistral-belgenet-7b"

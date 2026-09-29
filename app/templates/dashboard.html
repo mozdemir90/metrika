@@ -1,0 +1,2407 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>METRİKA | Operasyonel Metrik ve Performans Platformu</title>
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="/static/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/static/favicon.png">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+              950: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-100 to-blue-200 bg-clip-text text-transparent">METRİKA</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">v1.2</span>
+            </div>
+            <p class="text-xs text-slate-400 hidden sm:block">Operasyonel Metrik ve Performans Raporlama Platformu</p>
+          </div>
+        </div>
+
+        <!-- Report Template Selector (Tabs) in Navbar -->
+        <div class="hidden lg:flex items-center space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs">
+          <button onclick="switchReport('service_desk')" id="tabReportSD" class="px-3 py-1.5 rounded-lg font-semibold bg-blue-600 text-white transition">
+            Servis Masası & Sistem
+          </button>
+          <button onclick="switchReport('qa_testing')" id="tabReportQA" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition">
+            Test & QA Raporu
+          </button>
+          <span class="px-2.5 py-1.5 text-slate-500 cursor-not-allowed">
+            İş Geliştirme (Yakında)
+          </span>
+        </div>
+
+        <!-- Right Quick Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Akıllı Analist Quick Toggle -->
+          <button onclick="openAndScrollToAdHoc()" class="inline-flex items-center space-x-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 border border-indigo-700/60 transition shadow-xs" title="Akıllı Analisti Aç ve Odaklan">
+            <i data-lucide="bot" class="w-4 h-4 text-purple-300"></i>
+            <span class="hidden md:inline">Akıllı Analist</span>
+          </button>
+
+          <!-- Excel Export Button -->
+          <button id="btnExportExcel" onclick="exportExcel()" class="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Kurumsal Excel İndir</span>
+            <span class="sm:hidden">Excel</span>
+          </button>
+
+          <!-- Upload Toggle Button -->
+          <button onclick="toggleUploadModal()" class="inline-flex items-center space-x-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            <i data-lucide="upload" class="w-4 h-4 text-blue-400"></i>
+            <span class="hidden md:inline">Excel Yükle</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter & Control Bar -->
+  <section class="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <!-- Filter Tabs / Controls -->
+        <div class="flex flex-wrap items-center gap-3">
+          
+          <!-- Team Segment Selector (Servis Masası vs Sistem) -->
+          <div id="segmentSelectorGroup" class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs font-medium text-slate-600">
+            <button onclick="setSegment('all')" id="btnSegAll" class="px-3 py-1.5 rounded-md transition font-semibold bg-white text-blue-700 shadow-sm flex items-center space-x-1.5">
+              <span>🏢 Tüm Operasyon</span>
+              <span id="badgeCountAll" class="px-1.5 py-0.5 rounded-full text-[10px] bg-blue-100 text-blue-800 font-bold">-</span>
+            </button>
+            <button onclick="setSegment('service_desk')" id="btnSegSD" class="px-3 py-1.5 rounded-md transition hover:text-slate-900 text-slate-600 flex items-center space-x-1.5">
+              <span>🎧 Servis Masası (L1)</span>
+              <span id="badgeCountSD" class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-700 font-bold">-</span>
+            </button>
+            <button onclick="setSegment('system_ops')" id="btnSegSys" class="px-3 py-1.5 rounded-md transition hover:text-slate-900 text-slate-600 flex items-center space-x-1.5">
+              <span>⚙️ L1 ➔ L2 Sistem & VT</span>
+              <span id="badgeCountSys" class="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-700 font-bold">-</span>
+            </button>
+          </div>
+
+          <!-- Period Selector -->
+          <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs font-medium text-slate-600">
+            <button onclick="setDays(7)" id="btnDays7" class="px-2.5 py-1.5 rounded-md transition font-semibold bg-white text-blue-700 shadow-sm">Son 7 Gün</button>
+            <button onclick="setDays(15)" id="btnDays15" class="px-2.5 py-1.5 rounded-md transition hover:text-slate-900">Son 15 Gün</button>
+            <button onclick="setDays(30)" id="btnDays30" class="px-2.5 py-1.5 rounded-md transition hover:text-slate-900">Son 30 Gün</button>
+            <button onclick="setDays(0)" id="btnDays0" class="px-2.5 py-1.5 rounded-md transition hover:text-slate-900">Tüm Veri</button>
+          </div>
+
+          <!-- Data Source Selector -->
+          <div class="flex items-center space-x-2">
+            <select id="sourceSelect" onchange="changeSource()" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="upload" id="optUploadSource" selected>Yüklenen Dosya Verisi</option>
+              <option value="glpi">Canlı GLPI API</option>
+              <option value="mock">Simülasyon / Test Verisi</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Connection Status Indicator -->
+        <div class="flex items-center justify-between md:justify-end space-x-2 text-xs">
+          <span id="activeSourceBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+            <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 animate-pulse"></span>
+            <span id="activeSourceLabel">Veri Kaynağı: GLPI API</span>
+          </span>
+          <button onclick="fetchData()" title="Yenile" class="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition">
+            <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upload Modal / Dropzone -->
+  <div id="uploadModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 rounded-lg bg-blue-50 text-blue-600">
+            <i data-lucide="file-up" class="w-5 h-5"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-900">Ham GLPI Excel / CSV Yükle</h3>
+        </div>
+        <button onclick="toggleUploadModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-4">
+        GLPI sisteminden dışa aktardığınız ham çağrı listesini (.xlsx, .xls veya .csv) yükleyerek hem Servis Masası hem Sistem Ekibi ayrımını anında görebilir ve 6 sekmeli (OpenProject ve Kurum Analizi dahil) kurumsal raporunuzu üretebilirsiniz.
+      </p>
+
+      <div id="dropZone" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/50 transition" onclick="document.getElementById('fileInput').click()">
+        <i data-lucide="cloud-upload" class="w-10 h-10 text-slate-400 mx-auto mb-2"></i>
+        <p class="text-xs font-semibold text-slate-700">Dosya seçmek için tıklayın veya buraya sürükleyin</p>
+        <p class="text-[11px] text-slate-500 mt-1">.XLSX, .XLS, .CSV desteklenir</p>
+        <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this.files)">
+      </div>
+
+      <div id="uploadProgress" class="hidden mt-4">
+        <div class="flex items-center justify-between text-xs text-slate-600 mb-1">
+          <span id="uploadFileName">Yükleniyor...</span>
+          <span id="uploadStatusText">İşleniyor</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+          <div class="bg-blue-600 h-2 rounded-full animate-pulse" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end space-x-2">
+        <button onclick="toggleUploadModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">Kapat</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kurum Drill-Down Modal -->
+  <div id="institutionDetailModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6" onclick="handleBackdropClick(event)">
+    <div class="bg-white rounded-2xl w-full max-w-5xl shadow-2xl border border-slate-100 flex flex-col max-h-[92vh] overflow-hidden transform transition-all" onclick="event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white flex items-center justify-between border-b border-slate-700">
+        <div class="flex items-center space-x-3">
+          <div class="p-2.5 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/30">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h3 id="modalInstTitle" class="text-base font-bold text-white tracking-wide">Kurum Adı</h3>
+              <span id="modalOpForwardedBadge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                0 OP İletimi
+              </span>
+            </div>
+            <p class="text-xs text-slate-300">OpenProject Talep & Görev Tipi Dağılımı, Hedef Sepetler ve Çağrı Dökümü</p>
+          </div>
+        </div>
+        <button onclick="closeInstitutionDrillDown()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-6 overflow-y-auto space-y-6 custom-scrollbar text-xs">
+        
+        <!-- Scorecards Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <span class="text-[11px] text-slate-500 block">Toplam Çağrı</span>
+            <span id="modalKpiTotal" class="text-xl font-bold text-slate-900 mt-1 block">0</span>
+            <span class="text-[10px] text-slate-400">Tüm kayıtlar</span>
+          </div>
+          <div class="bg-rose-50/60 p-3 rounded-xl border border-rose-200">
+            <span class="text-[11px] text-rose-700 font-medium block">Hata</span>
+            <span id="modalKpiBugs" class="text-xl font-bold text-rose-700 mt-1 block">0</span>
+            <span id="modalKpiBugRate" class="text-[10px] text-rose-600 font-medium">%0 Hata Payı</span>
+          </div>
+          <div class="bg-blue-50/60 p-3 rounded-xl border border-blue-200">
+            <span class="text-[11px] text-blue-700 font-medium block">Destek</span>
+            <span id="modalKpiSupport" class="text-xl font-bold text-blue-700 mt-1 block">0</span>
+            <span class="text-[10px] text-blue-600">Standart Destek</span>
+          </div>
+          <div class="bg-purple-50/60 p-3 rounded-xl border border-purple-200 relative group">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] text-purple-700 font-medium block">Öneri</span>
+              <span class="cursor-help text-purple-600" title="Ek Geliştirme / Ek Hizmet Talebi (OCSS Öneri Modeli)">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+            <span id="modalKpiSuggestions" class="text-xl font-bold text-purple-700 mt-1 block">0</span>
+            <span class="text-[10px] text-purple-600 font-normal">Ek Geliştirme / Hizmet</span>
+          </div>
+          <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-200">
+            <span class="text-[11px] text-amber-700 font-medium block">OpenProject Aktarımı</span>
+            <span id="modalKpiOp" class="text-xl font-bold text-amber-800 mt-1 block">0</span>
+            <span id="modalKpiOpRate" class="text-[10px] text-amber-700 font-medium">%0 İletim Oranı</span>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs Bar -->
+        <div class="flex items-center space-x-2 border-b border-slate-200 pb-2">
+          <button id="instTabSummaryBtn" type="button" onclick="switchInstModalTab('summary')" class="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition duration-150 bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs">
+            <i data-lucide="git-branch" class="w-4 h-4 text-indigo-600"></i>
+            <span>Eskalasyon & Akış Özeti</span>
+          </button>
+          <button id="instTabTicketsBtn" type="button" onclick="switchInstModalTab('tickets')" class="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-xs transition duration-150 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i data-lucide="list" class="w-4 h-4 text-slate-500"></i>
+            <span>Kuruma Ait Çağrı Listesi (<span id="modalTabTicketCount" class="font-bold">0</span>)</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: Eskalasyon & Akış Özeti -->
+        <div id="instTabSummaryContent" class="space-y-4">
+          <!-- Executive Flow Insight Box -->
+          <div id="modalExecutiveInsight" class="p-3.5 rounded-xl bg-gradient-to-r from-indigo-50/90 via-blue-50/60 to-slate-50 border border-indigo-100 flex items-start gap-3 shadow-2xs">
+            <div class="p-2 rounded-lg bg-indigo-100 text-indigo-700 mt-0.5 shrink-0">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold text-indigo-900 tracking-wider uppercase">Yönetici Akış Özeti</div>
+              <p id="modalExecutiveText" class="text-xs text-slate-700 mt-1 leading-relaxed">
+                Hesaplanıyor...
+              </p>
+            </div>
+          </div>
+
+          <!-- Parameter Distribution 3-Column Cards -->
+          <div id="modalOpCardsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- 1. Talep Tipleri -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col">
+              <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                <span class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i>
+                  Talep Tipi Dağılımı
+                </span>
+                <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Talepler</span>
+              </div>
+              <div id="modalDemandList" class="space-y-2 flex-1">
+                <!-- dynamic -->
+              </div>
+            </div>
+
+            <!-- 2. Görev Tipleri -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col">
+              <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                <span class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                  <i data-lucide="check-square" class="w-3.5 h-3.5 text-blue-500"></i>
+                  Görev Tipi (İş Dağılımı)
+                </span>
+                <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Roller</span>
+              </div>
+              <div id="modalTaskList" class="space-y-2 flex-1">
+                <!-- dynamic -->
+              </div>
+            </div>
+
+            <!-- 3. Hedef Sepetler -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col">
+              <div class="flex items-center justify-between pb-2 mb-2.5 border-b border-slate-100">
+                <span class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                  <i data-lucide="inbox" class="w-3.5 h-3.5 text-amber-500"></i>
+                  Hedef Sepet (Kuyruk)
+                </span>
+                <span class="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Ekipler</span>
+              </div>
+              <div id="modalBasketList" class="space-y-2 flex-1">
+                <!-- dynamic -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty OP Notice -->
+          <div id="modalOpEmptyNotice" class="hidden p-4 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-800 text-xs flex items-center gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-blue-600 shrink-0"></i>
+            <div>
+              <strong class="font-semibold">OpenProject İletimi Bulunmuyor:</strong> Bu kuruma ait çağrılar doğrudan Servis Masası (L1) bünyesinde çözümlenmiş olup OpenProject'e yönlendirilmemiştir.
+            </div>
+          </div>
+
+          <!-- Cross Matrix Flow Section -->
+          <div id="modalCrossMatrixSection">
+            <div class="flex items-center justify-between mb-2">
+              <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="workflow" class="w-4 h-4 text-purple-600"></i>
+                Uçtan Uca Eskalasyon Akış Matrisi
+              </h4>
+              <span class="text-[11px] text-slate-400">Talep Tipi &rarr; Görev &rarr; Sepet yönlendirmeleri</span>
+            </div>
+            <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-2xs">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50/80 text-slate-700 font-semibold border-b border-slate-200">
+                  <tr>
+                    <th class="py-2.5 px-3">Talep Tipi</th>
+                    <th class="py-2.5 px-3">Görev Tipi</th>
+                    <th class="py-2.5 px-3">Hedef Sepet (Kuyruk)</th>
+                    <th class="py-2.5 px-3 text-center">Adet</th>
+                    <th class="py-2.5 px-3 text-right">Pay</th>
+                  </tr>
+                </thead>
+                <tbody id="modalCrossMatrixBody" class="divide-y divide-slate-100 text-slate-600">
+                  <!-- dynamic -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Tickets List Section -->
+        <div id="instTabTicketsContent" class="hidden space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <i data-lucide="list-filter" class="w-4 h-4 text-blue-600"></i>
+                Kuruma Ait Çağrılar ve Eskalasyon Detayları
+              </h4>
+              <p class="text-[11px] text-slate-500">Kök neden, teknisyen ve sepet yönlendirmeleri</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="relative w-64">
+                <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="modalTicketSearch" placeholder="No, başlık, sepet ara..." oninput="filterModalTickets()" class="w-full pl-8 pr-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white shadow-2xs">
+              </div>
+              <select id="modalTicketTypeFilter" onchange="filterModalTickets()" class="text-xs rounded-lg border border-slate-200 bg-white px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-700 shadow-2xs">
+                <option value="all">Tüm Çağrılar</option>
+                <option value="op_only">Sadece OP İletilenler</option>
+                <option value="Hata">Sadece Hata</option>
+                <option value="Destek">Sadece Destek</option>
+                <option value="Öneri">Sadece Öneri</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto max-h-[380px] custom-scrollbar border border-slate-200 rounded-xl bg-white shadow-2xs">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 sticky top-0 z-10">
+                <tr>
+                  <th class="py-2.5 px-3">No</th>
+                  <th class="py-2.5 px-3">Başlık</th>
+                  <th class="py-2.5 px-2 text-center">Kök Neden</th>
+                  <th class="py-2.5 px-2 text-center">OP Talep</th>
+                  <th class="py-2.5 px-2 text-center">OP Görev</th>
+                  <th class="py-2.5 px-2 text-center">Hedef Sepet</th>
+                  <th class="py-2.5 px-2 text-center">Durum</th>
+                  <th class="py-2.5 px-3">Teknisyen</th>
+                </tr>
+              </thead>
+              <tbody id="modalTicketTableBody" class="divide-y divide-slate-100 text-slate-600">
+                <!-- dynamic -->
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>En fazla ilk 100 çağrı listelenmektedir</span>
+            <span id="modalTicketCountBadge" class="font-medium text-slate-600">0 çağrı listeleniyor</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-xs text-slate-500">Metrika &bull; OpenProject Analizi</span>
+        <button onclick="closeInstitutionDrillDown()" class="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg shadow-sm transition">
+          Kapat
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 w-full">
+
+    <!-- Smart Column Mapping Banner -->
+    <div id="mappingAlert" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-blue-900 shadow-sm">
+      <div class="flex items-center space-x-2.5">
+        <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 flex-shrink-0"></i>
+        <div>
+          <span class="font-bold">Akıllı Sütun Eşleme: </span>
+          <span id="mappingSummaryText" class="text-blue-800">Sütunlar başarıyla tespit edildi.</span>
+        </div>
+      </div>
+      <button onclick="document.getElementById('mappingAlert').classList.add('hidden')" class="text-blue-500 hover:text-blue-700 text-[11px] font-semibold">Gizle</button>
+    </div>
+
+    <!-- Active Segment Indicator Banner -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-100/80 px-4 py-2.5 rounded-xl border border-slate-200 text-xs gap-2">
+      <div class="flex items-center space-x-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+        <span class="font-bold text-slate-800" id="currentSegmentLabel">Operasyonel Kapsam: Tüm Operasyon (Konsolide)</span>
+      </div>
+      <span class="text-slate-500 text-[11px]" id="currentSegmentSubtext">Tüm çağrılar ilk olarak L1 Servis Masası tarafından karşılanmaktadır</span>
+    </div>
+
+    <!-- Operasyonel Çağrı ve Eskalasyon Akışı (L1 ➔ L2 ➔ L3) -->
+    <div id="escalationFlowContainer" class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2 text-xs font-bold text-slate-800">
+          <i data-lucide="git-merge" class="w-4 h-4 text-blue-600"></i>
+          <span>Operasyonel Çağrı ve Eskalasyon Akışı</span>
+        </div>
+        <span class="text-[11px] font-medium text-slate-400">Tüm talepler L1 Servis Masası tarafından karşılanır</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+        <!-- Step 1: L1 Karşılama -->
+        <div class="p-3 rounded-lg bg-blue-50/70 border border-blue-200 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-blue-900 font-semibold mb-1">
+            <span>1. L1 Servis Masası (Giriş)</span>
+            <span class="p-1 rounded bg-blue-100 text-blue-700"><i data-lucide="headphones" class="w-3.5 h-3.5"></i></span>
+          </div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="flowL1Total" class="text-xl font-bold text-blue-950">-</span>
+            <span class="text-[10px] text-blue-700 font-bold">%100 Hacim</span>
+          </div>
+          <p class="text-[10px] text-blue-800/80 mt-1">Gelen tüm çağrıların ilk noktası</p>
+        </div>
+
+        <!-- Step 2: L1 Doğrudan Çözüm (OP Açılmayan) -->
+        <div class="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-emerald-900 font-semibold mb-1">
+            <span>2. L1 Doğrudan Çözülen</span>
+            <span class="p-1 rounded bg-emerald-100 text-emerald-700"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></span>
+          </div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="flowL1Direct" class="text-xl font-bold text-emerald-950">-</span>
+            <span id="flowL1DirectRate" class="text-[10px] text-emerald-700 font-bold">-%</span>
+          </div>
+          <p id="flowL1DirectDetail" class="text-[10px] text-emerald-800/80 mt-1">OP açılmadan L1'de çözülen</p>
+        </div>
+
+        <!-- Step 3: L1 -> L2 Sistem & VT -->
+        <div class="p-3 rounded-lg bg-indigo-50/70 border border-indigo-200 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-indigo-900 font-semibold mb-1">
+            <span>3. L1 ➔ L2 Sistem & VT</span>
+            <span class="p-1 rounded bg-indigo-100 text-indigo-700"><i data-lucide="server" class="w-3.5 h-3.5"></i></span>
+          </div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="flowL2Total" class="text-xl font-bold text-indigo-950">-</span>
+            <span id="flowL2Rate" class="text-[10px] text-indigo-700 font-bold">-%</span>
+          </div>
+          <p id="flowL2Detail" class="text-[10px] text-indigo-800/80 mt-1">Veritabanı ve Deploy işlemleri</p>
+        </div>
+
+        <!-- Step 4: L1 -> L3 Yazılım & Hata (Öneriler Düşürülmüş) -->
+        <div class="p-3 rounded-lg bg-purple-50/70 border border-purple-200 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-purple-900 font-semibold mb-1">
+            <span>4. L3'e Aktarılanlar</span>
+            <span class="p-1 rounded bg-purple-100 text-purple-700"><i data-lucide="layers" class="w-3.5 h-3.5"></i></span>
+          </div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="flowL3Total" class="text-xl font-bold text-purple-950">-</span>
+            <span id="flowL3Rate" class="text-[10px] text-purple-700 font-bold">-%</span>
+          </div>
+          <p id="flowL3Detail" class="text-[10px] text-purple-800/80 mt-1">Hata ve Yazılım aktarımları</p>
+        </div>
+
+        <!-- Step 5: İş Geliştirme'ye Aktarılanlar (Öneri & Ek Geliştirme) -->
+        <div class="p-3 rounded-lg bg-amber-50/70 border border-amber-200 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-amber-900 font-semibold mb-1">
+            <span>5. İş Geliştirme</span>
+            <span class="p-1 rounded bg-amber-100 text-amber-700"><i data-lucide="lightbulb" class="w-3.5 h-3.5"></i></span>
+          </div>
+          <div class="flex items-baseline justify-between mt-1">
+            <span id="flowBizDevTotal" class="text-xl font-bold text-amber-950">-</span>
+            <span id="flowBizDevRate" class="text-[10px] text-amber-700 font-bold">-%</span>
+          </div>
+          <p id="flowBizDevDetail" class="text-[10px] text-amber-800/80 mt-1">Öneri ve İyileştirme talepleri</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Scorecards Grid (Mobile 2-col, Desktop 6-col) with Clear Terminology & Tooltips -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <!-- 1. Toplam Çağrı -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative group">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">Toplam Çağrı Hacmi</span>
+          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <i data-lucide="inbox" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiTotalTickets" class="text-2xl font-bold text-slate-900">-</span>
+          <span id="kpiResolvedRate" class="text-[11px] font-semibold text-emerald-600">%0 Çözüm</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">İşlenen tüm kayıt sayısı</p>
+      </div>
+
+      <!-- 2. Çözüm Başarı Oranı -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative group" title="Kapatılan ve çözüme kavuşturulan çağrıların toplam çağrılara oranı">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">Çözüm Başarı Oranı</span>
+          <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiOverallSla" class="text-2xl font-bold text-emerald-700">-%</span>
+          <span id="kpiResolvedDetail" class="text-[11px] text-slate-500">- Çözülen</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">Sonuçlandırılan çağrı yüzdesi</p>
+      </div>
+
+      <!-- 3. FCR (İlk Temasta Çözüm) -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative group" title="Başka ekibe aktarılmadan doğrudan servis masasında çözülen çağrılar">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">İlk Temas (FCR)</span>
+          <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiFcrRate" class="text-2xl font-bold text-indigo-700">-%</span>
+          <span id="kpiFcrCount" class="text-[11px] text-slate-500">- adet</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">L1'de doğrudan kapatılanlar</p>
+      </div>
+
+      <!-- 4. Yeniden Açılma (Reopen) -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative group" title="Kullanıcının çözümü yetersiz bulup tekrar açtığı çağrı oranı">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">Yeniden Açılma</span>
+          <div class="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiReopenRate" class="text-2xl font-bold text-amber-700">-%</span>
+          <span class="text-[11px] text-slate-500">Kalite İndikatörü</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">Kullanıcı itiraz / re-open</p>
+      </div>
+
+      <!-- 5. Ort. İlk Yanıt (MTTA) -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative group" title="Talebe ilk aksiyon ve yanıt verilene kadar geçen fiili süre">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">İlk Ele Alınma (MTTA)</span>
+          <div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiAvgMtta" class="text-2xl font-bold text-slate-900">- dk</span>
+          <span class="text-[11px] font-semibold text-blue-600">Ortalama İlk Müdahale</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">Personelin ilk aksiyon süresi</p>
+      </div>
+
+      <!-- 6. Ort. Net Çözüm (MTTR) -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative group" title="Dış bekleme süreleri düşülmüş fiili personel çalışma süresi">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">Net Çözüm (MTTR)</span>
+          <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+            <i data-lucide="timer" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div class="mt-2 flex items-baseline justify-between">
+          <span id="kpiAvgNetMttr" class="text-2xl font-bold text-slate-900">- sa</span>
+          <span id="kpiExtWait" class="text-[10px] text-slate-500" title="Düşülen Dış Bekleme">- sa dış bekleme</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">Net personel çalışma süresi</p>
+      </div>
+    </div>
+
+    <!-- AI & Qwen LLM Executive Summary Card (Light High-Contrast Corporate) -->
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/90 relative overflow-hidden">
+      <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="p-2.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100 shadow-sm">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 tracking-wide">METRİKA AKILLI YÖNETİCİ ÖZETİ & OPERASYONEL AKSİYONLAR</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Operasyonel Darboğazlar ve Proaktif Çözüm Önerileri</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="generateLlmSummary()" id="btnGenerateAi" title="Qwen LLM ile derinlemesine yapay zeka analizi üret" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition gap-1.5 shadow-xs">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-600"></i>
+            <span id="btnAiText">✨ Qwen ile Özet Üret</span>
+          </button>
+          <div id="aiHealthBadge" class="self-start sm:self-auto inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+            Durum Analiz Ediliyor
+          </div>
+        </div>
+      </div>
+
+      <!-- Executive Narrative Banner -->
+      <div id="aiExecutiveNarrativeContainer" class="hidden mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-sm text-slate-800 leading-relaxed font-medium">
+        <p id="aiExecutiveNarrative"></p>
+      </div>
+
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <div class="bg-blue-50/50 rounded-xl p-4 border border-blue-100 shadow-xs">
+          <div class="flex items-center space-x-2 text-blue-900 font-bold mb-2.5">
+            <i data-lucide="eye" class="w-4 h-4 text-blue-600"></i>
+            <span>Stratejik Gözlemler</span>
+          </div>
+          <ul id="aiObservationsList" class="space-y-2 text-slate-700 font-medium leading-snug">
+            <li>Veriler yükleniyor...</li>
+          </ul>
+        </div>
+
+        <div class="bg-amber-50/50 rounded-xl p-4 border border-amber-100 shadow-xs">
+          <div class="flex items-center space-x-2 text-amber-900 font-bold mb-2.5">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>
+            <span>Kritik Eşikler & Uyarılar</span>
+          </div>
+          <ul id="aiAlertsList" class="space-y-2 text-slate-700 font-medium leading-snug">
+            <li>Kontrol ediliyor...</li>
+          </ul>
+        </div>
+
+        <div class="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100 shadow-xs">
+          <div class="flex items-center space-x-2 text-emerald-900 font-bold mb-2.5">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-emerald-600"></i>
+            <span>Önerilen Aksiyon Planı</span>
+          </div>
+          <ul id="aiRecsList" class="space-y-2 text-slate-700 font-medium leading-snug">
+            <li>Hazırlanıyor...</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Qwen Ad-Hoc Natural Language Analytics Collapsible Toggle Bar (Closed by default) -->
+    <div id="adHocPanelContainer" class="bg-white rounded-2xl shadow-sm border border-slate-200/90 relative overflow-hidden transition-all duration-300">
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600"></div>
+      
+      <!-- Clickable Toggle Bar Header (Always Visible, Compact) -->
+      <div onclick="toggleAdHocPanel()" class="p-4 sm:px-6 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/80 transition-colors select-none">
+        <div class="flex items-center space-x-3 min-w-0">
+          <div class="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 text-indigo-700 border border-indigo-200 shadow-sm shrink-0">
+            <i data-lucide="bot" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">Akıllı Analist</h2>
+            <p class="text-[11px] text-slate-500 mt-0.5 truncate hidden md:block">Doğal dille operasyonel soru sorun; anlık sayısal filtreleme, dinamik pasta/çubuk grafiği ve yönetici özeti üretin.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 shrink-0">
+          <button type="button" id="btnAdHocToggleBar" class="inline-flex items-center px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition gap-1.5 shadow-xs pointer-events-none">
+            <span id="adHocToggleText">Analisti Aç</span>
+            <i id="adHocToggleChevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsible Body (Closed by default) -->
+      <div id="adHocPanelBody" class="hidden px-4 sm:px-6 pb-6 pt-2 border-t border-slate-100 space-y-4">
+
+      <!-- Input & Action Controls -->
+      <div class="mt-4 space-y-3">
+        <div class="relative">
+          <textarea id="adHocQueryInput" rows="2" placeholder="Örnek: 'Cumhurbaşkanlığı\'nın sistem sepetindeki çağrıları ve görev tipleri nelerdir?', 'En çok hata açan ilk 5 kurum ve sepet dağılımı', 'Öneri ve ek geliştirme talepleri hangi sepetlere gidiyor?'" class="w-full p-3.5 pr-32 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 resize-none transition outline-none"></textarea>
+          <div class="absolute right-2.5 bottom-3">
+            <button onclick="submitAdHocQuery()" id="btnAdHocSubmit" class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-sm transition gap-1.5 cursor-pointer disabled:opacity-50">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span id="btnAdHocText">Analiz Et & Çiz</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Prompt Chips -->
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <span class="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+            <i data-lucide="zap" class="w-3 h-3 text-amber-500"></i>
+            Örnek İstekler:
+          </span>
+          <button onclick="fillAdHocPrompt('Cumhurbaşkanlığı\'nın sistem sepetindeki çağrıları ve görev tipleri')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 border border-slate-200 transition">
+            🏢 Cumhurbaşkanlığı Sistem Sepeti
+          </button>
+          <button onclick="fillAdHocPrompt('En çok hata ve arıza kaydı açan ilk 5 kurum')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-700 border border-slate-200 transition">
+            ⚠️ En Çok Hata Açan Kurumlar
+          </button>
+          <button onclick="fillAdHocPrompt('Öneri ve ek geliştirme taleplerinin sepet analizi')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-purple-50 hover:text-purple-700 text-slate-700 border border-slate-200 transition">
+            💡 Öneri & Ek Geliştirme Sepetleri
+          </button>
+          <button onclick="fillAdHocPrompt('Sistem ekibine giden çağrıların görev tipleri ve dağılımı')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 transition">
+            ⚙️ Sistem Ekibi Görev Tipleri
+          </button>
+          <button onclick="fillAdHocPrompt('En çok çağrı çözen teknisyenlerin dağılımı')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 border border-slate-200 transition">
+            🎧 Teknisyen Dağılımı
+          </button>
+        </div>
+      </div>
+
+      <!-- Result Container -->
+      <div id="adHocResultContainer" class="hidden mt-5 pt-5 border-t border-slate-100 space-y-4">
+        
+        <!-- Guardrail / Out of Scope Alert (if triggered) -->
+        <div id="adHocGuardrailAlert" class="hidden p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start space-x-3">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold text-amber-950 block mb-0.5">Kapsam Dışı Soru Tespit Edildi</span>
+            <p id="adHocGuardrailText" class="text-amber-800 leading-relaxed"></p>
+          </div>
+        </div>
+
+        <!-- Valid Result Content -->
+        <div id="adHocContent" class="space-y-4">
+          <!-- Filter & KPI Row -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-semibold text-slate-500">Uygulanan Filtreler:</span>
+              <span id="adHocInterpretationBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                -
+              </span>
+            </div>
+            <div id="adHocCardsRow" class="flex flex-wrap items-center gap-2">
+              <!-- Dynamically populated KPI badges -->
+            </div>
+          </div>
+
+          <!-- Narrative Text Box -->
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 leading-relaxed">
+            <div class="flex items-center space-x-2 text-indigo-700 font-bold mb-1.5">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>Yönetici Analiz Değerlendirmesi</span>
+            </div>
+            <p id="adHocNarrativeText" class="font-medium text-slate-700"></p>
+          </div>
+
+          <!-- Chart & Table Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 pt-2">
+            <!-- Left: Dynamic Chart (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-50/70 p-4 rounded-xl border border-slate-200 flex flex-col">
+              <div class="flex items-center justify-between mb-3">
+                <h3 id="adHocChartTitle" class="text-xs font-bold text-slate-800 tracking-wide">Özel Grafik</h3>
+                <span class="p-1 rounded-md bg-white border border-slate-200 text-indigo-600">
+                  <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i>
+                </span>
+              </div>
+              <div class="relative flex-1 min-h-[260px] flex items-center justify-center">
+                <canvas id="adHocChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: Breakdown Table (5 cols) -->
+            <div class="lg:col-span-5 bg-white p-4 rounded-xl border border-slate-200 flex flex-col overflow-hidden">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-slate-800 tracking-wide">Veri Dağılım Tablosu</h3>
+                <span id="adHocTableCountBadge" class="text-[11px] font-semibold text-slate-500">0 Kayıt</span>
+              </div>
+              <div class="overflow-x-auto max-h-[260px] custom-scrollbar">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-100/80 text-slate-600 font-semibold sticky top-0">
+                    <tr id="adHocTableHeaders">
+                      <th class="py-2 px-3 rounded-l-lg">Kategori</th>
+                      <th class="py-2 px-3 text-right">Adet</th>
+                      <th class="py-2 px-3 text-right rounded-r-lg">Oran</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adHocTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Chart 1: Günlük Çağrı Hacmi & Çözüm Trendi -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">Günlük Çağrı Hacmi ve Çözüm Trendi</h3>
+            <p class="text-xs text-slate-500">Gelen yeni talepler ile kapatılan çağrıların karşılaştırması</p>
+          </div>
+          <span class="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="relative flex-1 min-h-[260px]">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Kök Neden & SLA Uyum Dağılımı -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">Kök Neden & Öncelik Dağılımı</h3>
+            <p class="text-xs text-slate-500">Hata, Destek ve Öneri dağılımı ile öncelik seviyeleri</p>
+          </div>
+          <span class="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+            <i data-lucide="pie-chart" class="w-4 h-4"></i>
+          </span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center">
+          <div class="relative h-[220px]">
+            <canvas id="rootCauseChart"></canvas>
+          </div>
+          <div class="relative h-[220px]">
+            <canvas id="priorityChart"></canvas>
+          </div>
+        </div>
+        <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0"></span>
+            <strong class="text-slate-700">Öneri:</strong>
+            <span class="cursor-help underline decoration-dotted text-purple-700 font-medium" title="Ek Geliştirme / Ek Hizmet Talebi (OCSS Öneri Modeli)">Ek Geliştirme / Ek Hizmet</span>
+          </span>
+          <span id="rootCauseSummaryBadge" class="font-medium text-slate-600"></span>
+        </div>
+      </div>
+
+      <!-- Chart 3: Kurumsal Dağılım ve OpenProject Entegrasyonu -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col lg:col-span-2">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-800">Kurumsal Dağılım, Kök Neden ve OpenProject Akışı</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Grafikteki kurumlara veya tablodaki <strong>İncele</strong> butonuna tıklayarak Talep Tipi, Görev Tipi ve Sepet detaylarını görebilirsiniz.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="btnToggleInstView" onclick="toggleInstView()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="table" class="w-3.5 h-3.5"></i>
+              <span id="btnToggleInstViewLabel">Tablo Görünümü</span>
+            </button>
+            <span class="p-1.5 rounded-lg bg-slate-100 text-slate-600">
+              <i data-lucide="building-2" class="w-4 h-4"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- Chart View -->
+        <div id="instChartView" class="flex flex-col">
+          <div class="relative min-h-[290px]">
+            <canvas id="institutionsChart"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-400 text-right mt-1.5 italic">* İlgili kurumun OpenProject sepet, görev ve çağrı detayları için grafik çubuğuna tıklayınız.</p>
+        </div>
+
+        <!-- Table View -->
+        <div id="instTableView" class="hidden flex-col space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+            <div class="relative flex-1 max-w-sm">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="instSearchInput" placeholder="Kurum adına göre filtrele..." oninput="filterInstitutionsTable()" class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50 focus:bg-white transition">
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <span id="instTableCountBadge" class="font-medium text-slate-700">0 Kurum</span>
+              <button onclick="toggleInstTableLimit()" id="instTableLimitBtn" class="text-blue-600 hover:underline text-xs font-medium">Tümünü Göster</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto custom-scrollbar border border-slate-100 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="py-2.5 px-3">Kurum Adı</th>
+                  <th class="py-2.5 px-2 text-center">Toplam</th>
+                  <th class="py-2.5 px-2 text-center text-rose-600">Hata</th>
+                  <th class="py-2.5 px-2 text-center text-blue-600">Destek</th>
+                  <th class="py-2.5 px-2 text-center text-purple-600">
+                    <span class="cursor-help underline decoration-dotted" title="Ek Geliştirme / Ek Hizmet Talebi">Öneri ⓘ</span>
+                  </th>
+                  <th class="py-2.5 px-2 text-center text-amber-700">OP İletilen</th>
+                  <th class="py-2.5 px-3 text-right">Aksiyon</th>
+                </tr>
+              </thead>
+              <tbody id="institutionsTableBody" class="divide-y divide-slate-100 text-slate-600">
+                <tr><td colspan="7" class="text-center py-4 text-slate-400">Yükleniyor...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technician Performance Table Section -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800" id="techTableTitle">Personel Performans ve Efor Matrisi</h3>
+          <p class="text-xs text-slate-500">Normalleştirilmiş personel bazlı çözüm, süre ve kalite metrikleri</p>
+        </div>
+        <div class="text-xs text-slate-500">
+          <span class="font-medium text-slate-700" id="techCountLabel">0 Personel</span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="py-3 px-4">Personel Adı</th>
+              <th class="py-3 px-3 text-center">Atanan</th>
+              <th class="py-3 px-3 text-center">Çözülen</th>
+              <th class="py-3 px-3 text-center">Çözüm Oranı</th>
+              <th class="py-3 px-3 text-center cursor-help" title="Net Çözüm Süresi = Toplam Süre - Dış Bekleme">Ort. Net Efor</th>
+              <th class="py-3 px-3 text-center cursor-help" title="İlk Müdahale / Ele Alınma Süresi (MTTA)">Ort. İlk Yanıt</th>
+              <th class="py-3 px-3 text-center cursor-help" title="Kullanıcı / Kurum Bilgi veya Onay Bekleme Süresi">Ort. Dış Bekleme</th>
+              <th class="py-3 px-4 text-center cursor-help" title="Kullanıcının çözümü yetersiz bulup tekrar açtığı çağrı oranı">Yeniden Açılma</th>
+            </tr>
+          </thead>
+          <tbody id="techTableBody" class="divide-y divide-slate-200 text-slate-600">
+            <tr>
+              <td colspan="8" class="text-center py-6 text-slate-400">Veriler yükleniyor...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="px-5 py-3 bg-slate-50/80 border-t border-slate-200 text-[11px] text-slate-600 space-y-2">
+        <div class="flex items-start gap-2.5">
+          <i data-lucide="info" class="w-4 h-4 text-indigo-500 shrink-0 mt-0.5"></i>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 w-full">
+            <div>
+              <strong class="text-purple-700 font-semibold">Ort. Net Efor:</strong>
+              <span class="text-slate-600"> Çözülen çağrıların toplam süresinden dış bekleme düşülerek hesaplanan net fiili çalışma süresidir.</span>
+            </div>
+            <div>
+              <strong class="text-blue-700 font-semibold">Ort. İlk Yanıt:</strong>
+              <span class="text-slate-600"> Çağrı açılışından personelin ilk aksiyon veya müdahale aldığı ana kadar geçen ilk temas süresidir (MTTA).</span>
+            </div>
+            <div>
+              <strong class="text-amber-700 font-semibold">Ort. Dış Bekleme:</strong>
+              <span class="text-slate-600"> Kullanıcı onayı, ek bilgi veya kurum geri dönüşü beklenirken kaydın askıda kaldığı süredir.</span>
+            </div>
+          </div>
+        </div>
+        <div class="text-[10px] text-slate-400 pl-6 border-t border-slate-200/60 pt-1.5">
+          * GLPI dışa aktarımında ilk yanıt veya bekleme süresi girilmediğinde ilgili sütunlar <code>-</code> olarak gösterilir.
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>METRİKA | Operasyonel Metrik ve Performans Raporlama Platformu</span>
+      <span class="text-slate-400">Belgenet GLPI & Kubernetes Mikroservisi</span>
+    </div>
+  </footer>
+
+  <!-- Frontend Logic -->
+  <script>
+    let currentDays = 7;
+    let currentSource = 'upload';
+    let currentReportType = 'service_desk';
+    let currentSegment = 'all';
+    let chartInstances = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const sel = document.getElementById('sourceSelect');
+      if (sel) {
+        currentSource = sel.value || 'upload';
+      }
+      updateSourceBadge();
+      lucide.createIcons();
+      fetchData();
+
+      const adHocInput = document.getElementById('adHocQueryInput');
+      if (adHocInput) {
+        adHocInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submitAdHocQuery();
+          }
+        });
+      }
+    });
+
+    async function generateLlmSummary() {
+      const btn = document.getElementById('btnGenerateAi');
+      const btnText = document.getElementById('btnAiText');
+      const prevText = btnText ? btnText.innerText : '✨ Qwen ile Özet Üret';
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = 'Analiz Hazırlanıyor...';
+
+      try {
+        const url = `/api/v1/reports/${currentReportType}/ai-summary?days=${currentDays}&source=${currentSource}&segment=${currentSegment}`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('AI özeti alınamadı.');
+        const data = await resp.json();
+        const ai = data.executive_insights || {};
+
+        const modelNameEl = document.getElementById('aiModelName');
+        if (modelNameEl) modelNameEl.innerText = ai.source || 'Qwen 3.5 (122B - TÜRKSAT PAAS)';
+
+        const narrativeEl = document.getElementById('aiExecutiveNarrative');
+        const narrativeContainer = document.getElementById('aiExecutiveNarrativeContainer');
+        if (ai.executive_summary) {
+          narrativeEl.innerText = ai.executive_summary;
+          narrativeContainer.classList.remove('hidden');
+        }
+
+        if (ai.observations && ai.observations.length > 0) {
+          document.getElementById('aiObservationsList').innerHTML = ai.observations.map(o => `<li>• ${o}</li>`).join('');
+        }
+        if (ai.alerts && ai.alerts.length > 0) {
+          document.getElementById('aiAlertsList').innerHTML = ai.alerts.map(a => `<li>• ${a}</li>`).join('');
+        }
+        if (ai.recommendations && ai.recommendations.length > 0) {
+          document.getElementById('aiRecsList').innerHTML = ai.recommendations.map(r => `<li>• ${r}</li>`).join('');
+        }
+
+        if (btnText) btnText.innerText = '✨ AI Özeti Güncellendi';
+      } catch (err) {
+        alert('AI Özeti alınamadı: ' + err.message);
+        if (btnText) btnText.innerText = prevText;
+      } finally {
+        if (btn) btn.disabled = false;
+        setTimeout(() => { if (btnText) btnText.innerText = '✨ Qwen ile Özet Üret'; }, 3000);
+      }
+    }
+
+    function setSegment(seg) {
+      currentSegment = seg;
+      const segs = [
+        { id: 'btnSegAll', key: 'all' },
+        { id: 'btnSegSD', key: 'service_desk' },
+        { id: 'btnSegSys', key: 'system_ops' }
+      ];
+
+      segs.forEach(s => {
+        const el = document.getElementById(s.id);
+        if (s.key === seg) {
+          el.className = "px-3 py-1.5 rounded-md transition font-semibold bg-white text-blue-700 shadow-sm flex items-center space-x-1.5";
+        } else {
+          el.className = "px-3 py-1.5 rounded-md transition hover:text-slate-900 text-slate-600 flex items-center space-x-1.5";
+        }
+      });
+
+      const labelEl = document.getElementById('currentSegmentLabel');
+      const subtextEl = document.getElementById('currentSegmentSubtext');
+      if (seg === 'all') {
+        labelEl.innerText = 'Operasyonel Kapsam: Tüm Operasyon (Konsolide)';
+        if (subtextEl) subtextEl.innerText = 'Tüm operasyonel çağrılar (İlk karşılama L1 üzerinden)';
+      } else if (seg === 'service_desk') {
+        labelEl.innerText = 'Operasyonel Kapsam: Servis Masası (L1 / BNSM)';
+        if (subtextEl) subtextEl.innerText = 'İlk karşılama yapılan tüm çağrılar ve ilk temas performansı';
+      } else if (seg === 'system_ops') {
+        labelEl.innerText = 'Operasyonel Kapsam: Sistem & VT Ekibi (L2 / BN)';
+        if (subtextEl) subtextEl.innerText = "L1'den L2 Sistem & VT ekibine aktarılan çağrılar";
+      }
+
+      fetchData();
+    }
+
+    function switchReport(type) {
+      currentReportType = type;
+      const btnSD = document.getElementById('tabReportSD');
+      const btnQA = document.getElementById('tabReportQA');
+      const segGroup = document.getElementById('segmentSelectorGroup');
+
+      if (type === 'service_desk') {
+        btnSD.className = "px-3 py-1.5 rounded-lg font-semibold bg-blue-600 text-white transition";
+        btnQA.className = "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition";
+        segGroup.classList.remove('hidden');
+      } else {
+        btnQA.className = "px-3 py-1.5 rounded-lg font-semibold bg-emerald-600 text-white transition";
+        btnSD.className = "px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition";
+        segGroup.classList.add('hidden');
+      }
+
+      fetchData();
+    }
+
+    function setDays(days) {
+      currentDays = days;
+      ['7', '15', '30', '0'].forEach(d => {
+        const btn = document.getElementById('btnDays' + d);
+        if (btn) {
+          if (parseInt(d) === days) {
+            btn.className = "px-2.5 py-1.5 rounded-md transition font-semibold bg-white text-blue-700 shadow-sm";
+          } else {
+            btn.className = "px-2.5 py-1.5 rounded-md transition hover:text-slate-900 text-slate-600";
+          }
+        }
+      });
+      fetchData();
+    }
+
+    function changeSource() {
+      const sel = document.getElementById('sourceSelect');
+      currentSource = sel.value;
+      updateSourceBadge();
+      fetchData();
+    }
+
+    function updateSourceBadge() {
+      const badge = document.getElementById('activeSourceBadge');
+      const label = document.getElementById('activeSourceLabel');
+      if (currentSource === 'glpi') {
+        label.innerText = 'Veri Kaynağı: Canlı GLPI API';
+        badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200';
+      } else if (currentSource === 'mock') {
+        label.innerText = 'Veri Kaynağı: Test Verisi';
+        badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200';
+      } else if (currentSource === 'upload') {
+        label.innerText = 'Veri Kaynağı: Yüklenen Dosya';
+        badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
+      }
+    }
+
+    function toggleUploadModal() {
+      const modal = document.getElementById('uploadModal');
+      modal.classList.toggle('hidden');
+    }
+
+    async function handleFileSelect(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+
+      const progress = document.getElementById('uploadProgress');
+      const fileNameEl = document.getElementById('uploadFileName');
+      const statusText = document.getElementById('uploadStatusText');
+
+      progress.classList.remove('hidden');
+      fileNameEl.innerText = file.name;
+      statusText.innerText = 'Yükleniyor ve işleniyor...';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const resp = await fetch(`/api/v1/reports/${currentReportType}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.detail || 'Dosya yükleme başarısız.');
+        }
+
+        const data = await resp.json();
+        statusText.innerText = 'Tamamlandı!';
+
+        const opt = document.getElementById('optUploadSource');
+        opt.disabled = false;
+        opt.selected = true;
+        currentSource = 'upload';
+        updateSourceBadge();
+
+        if (data.mapping_summary) {
+          document.getElementById('mappingSummaryText').innerText = data.mapping_summary;
+          document.getElementById('mappingAlert').classList.remove('hidden');
+        }
+
+        setTimeout(() => {
+          toggleUploadModal();
+          progress.classList.add('hidden');
+          // Switch to "Tüm Veri" (0 days) so all uploaded rows are initially displayed
+          setDays(0);
+        }, 500);
+
+      } catch (e) {
+        alert('Hata: ' + e.message);
+        statusText.innerText = 'Hata oluştu';
+      }
+    }
+
+    async function fetchData() {
+      try {
+        const url = `/api/v1/reports/${currentReportType}/metrics?days=${currentDays}&source=${currentSource}&segment=${currentSegment}`;
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          throw new Error('Veri alınamadı.');
+        }
+        const data = await resp.json();
+        renderData(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderData(data) {
+      const s = data.summary || {};
+      const tb = data.team_breakdown || {};
+
+      // Update segment badges if present
+      if (tb.service_desk_count !== undefined) {
+        document.getElementById('badgeCountAll').innerText = tb.total_tickets || tb.service_desk_count || 0;
+        document.getElementById('badgeCountSD').innerText = tb.service_desk_count || 0;
+        document.getElementById('badgeCountSys').innerText = tb.system_ops_count || 0;
+      }
+
+      // Update Escalation Flow Cards
+      const esc = data.escalation_summary || {};
+      const totalInc = esc.total_incoming || tb.total_tickets || s.total_tickets || 0;
+      const elL1Tot = document.getElementById('flowL1Total');
+      if (elL1Tot) elL1Tot.innerText = totalInc;
+
+      const elL1Dir = document.getElementById('flowL1Direct');
+      const elL1DirRate = document.getElementById('flowL1DirectRate');
+      const elL1DirDetail = document.getElementById('flowL1DirectDetail');
+      if (elL1Dir && esc.l1_direct) {
+        elL1Dir.innerText = esc.l1_direct.count || esc.l1_direct.resolved || 0;
+        if (elL1DirRate) elL1DirRate.innerText = `%${esc.l1_direct.rate || 0}`;
+        if (elL1DirDetail) {
+          const tot = esc.l1_direct.total_unforwarded || 0;
+          const res = esc.l1_direct.count || esc.l1_direct.resolved || 0;
+          if (tot > 0 && tot !== res) {
+            elL1DirDetail.innerText = `OP açılmayan ${tot} çağrının ${res}'i çözüldü`;
+          } else {
+            elL1DirDetail.innerText = "OP açılmadan L1'de çözülen";
+          }
+        }
+      }
+
+      const elL2Tot = document.getElementById('flowL2Total');
+      const elL2Rate = document.getElementById('flowL2Rate');
+      const elL2Detail = document.getElementById('flowL2Detail');
+      if (elL2Tot && esc.l2_transfers) {
+        elL2Tot.innerText = esc.l2_transfers.count || 0;
+        if (elL2Rate) elL2Rate.innerText = `%${esc.l2_transfers.rate || 0}`;
+        if (elL2Detail && esc.l2_transfers.task_types) {
+          const parts = Object.entries(esc.l2_transfers.task_types)
+            .filter(([k]) => k !== 'Belirtilmemiş')
+            .map(([k, v]) => `${k.replace('BN-', '')}: ${v}`)
+            .slice(0, 2);
+          if (parts.length > 0) elL2Detail.innerText = parts.join(', ');
+        }
+      }
+
+      const elL3Tot = document.getElementById('flowL3Total');
+      const elL3Rate = document.getElementById('flowL3Rate');
+      const elL3Detail = document.getElementById('flowL3Detail');
+      if (elL3Tot && esc.l3_transfers) {
+        elL3Tot.innerText = esc.l3_transfers.count || 0;
+        if (elL3Rate) elL3Rate.innerText = `%${esc.l3_transfers.rate || 0}`;
+        if (elL3Detail) {
+          let parts = [];
+          if (esc.l3_transfers.task_types) {
+            parts = Object.entries(esc.l3_transfers.task_types)
+              .filter(([k]) => k !== 'Belirtilmemiş')
+              .map(([k, v]) => `${k.replace('BN-', '').replace('Belgenet ', '')}: ${v}`)
+              .slice(0, 2);
+          }
+          if (parts.length === 0 && esc.l3_transfers.baskets) {
+            parts = Object.entries(esc.l3_transfers.baskets)
+              .filter(([k]) => k !== 'Belirtilmemiş')
+              .map(([k, v]) => `${k.replace('BN-', '').replace(' Sepetine İlet', '')}: ${v}`)
+              .slice(0, 2);
+          }
+          if (parts.length > 0) elL3Detail.innerText = parts.join(', ');
+        }
+      }
+
+      const elBizDevTot = document.getElementById('flowBizDevTotal');
+      const elBizDevRate = document.getElementById('flowBizDevRate');
+      const elBizDevDetail = document.getElementById('flowBizDevDetail');
+      if (elBizDevTot && esc.business_dev_transfers) {
+        elBizDevTot.innerText = esc.business_dev_transfers.count || 0;
+        if (elBizDevRate) elBizDevRate.innerText = `%${esc.business_dev_transfers.rate || 0}`;
+        if (elBizDevDetail) {
+          let parts = [];
+          if (esc.business_dev_transfers.task_types) {
+            parts = Object.entries(esc.business_dev_transfers.task_types)
+              .filter(([k]) => k !== 'Belirtilmemiş')
+              .map(([k, v]) => `${k.replace('BN-', '').replace('Belgenet ', '')}: ${v}`)
+              .slice(0, 2);
+          }
+          if (parts.length === 0 && esc.business_dev_transfers.baskets) {
+            parts = Object.entries(esc.business_dev_transfers.baskets)
+              .filter(([k]) => k !== 'Belirtilmemiş')
+              .map(([k, v]) => `${k.replace('BN-', '').replace(' Sepetine İlet', '')}: ${v}`)
+              .slice(0, 2);
+          }
+          if (parts.length > 0) elBizDevDetail.innerText = parts.join(', ');
+        }
+      }
+
+      // KPIs
+      document.getElementById('kpiTotalTickets').innerText = (s.total_tickets || 0).toLocaleString();
+      document.getElementById('kpiResolvedRate').innerText = `${s.open_tickets || 0} Açık / Devam Eden`;
+      document.getElementById('kpiOverallSla').innerText = `%${s.resolution_rate || 0}`;
+      document.getElementById('kpiResolvedDetail').innerText = `${s.resolved_tickets || 0} Çözülen / Kapatılan`;
+      document.getElementById('kpiFcrRate').innerText = `%${s.fcr_rate || 0}`;
+      document.getElementById('kpiFcrCount').innerText = `${s.fcr_count || 0} adet`;
+      document.getElementById('kpiReopenRate').innerText = `%${s.reopen_rate || 0}`;
+      document.getElementById('kpiAvgMtta').innerText = `${s.avg_mtta_minutes || 0} dk`;
+      document.getElementById('kpiAvgNetMttr').innerText = `${s.avg_net_mttr_hours || 0} sa`;
+      document.getElementById('kpiExtWait').innerText = `${s.avg_external_wait_hours || 0} sa dış bekleme`;
+
+      // Executive Insights
+      const ai = data.executive_insights || {};
+      const healthBadge = document.getElementById('aiHealthBadge');
+      healthBadge.innerText = ai.health_status || 'Operasyonel Durum İyi';
+
+      // Set health badge color (light high-contrast)
+      if (ai.health_color === 'green') {
+        healthBadge.className = 'self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm';
+      } else if (ai.health_color === 'red') {
+        healthBadge.className = 'self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm';
+      } else if (ai.health_color === 'yellow') {
+        healthBadge.className = 'self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm';
+      } else {
+        healthBadge.className = 'self-start sm:self-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm';
+      }
+
+      const modelNameEl = document.getElementById('aiModelName');
+      if (modelNameEl) {
+        modelNameEl.innerText = ai.source || 'Qwen 3.5 (122B)';
+      }
+
+      const narrativeEl = document.getElementById('aiExecutiveNarrative');
+      const narrativeContainer = document.getElementById('aiExecutiveNarrativeContainer');
+      if (ai.executive_summary) {
+        narrativeEl.innerText = ai.executive_summary;
+        narrativeContainer.classList.remove('hidden');
+      } else {
+        narrativeContainer.classList.add('hidden');
+      }
+
+      const obsList = document.getElementById('aiObservationsList');
+      obsList.innerHTML = (ai.observations || []).map(o => `<li>• ${o}</li>`).join('') || '<li>Gözlem bulunamadı.</li>';
+
+      const alertsList = document.getElementById('aiAlertsList');
+      alertsList.innerHTML = (ai.alerts || []).map(a => `<li>• ${a}</li>`).join('') || '<li>Kritik risk tespit edilmedi.</li>';
+
+      const recsList = document.getElementById('aiRecsList');
+      let recsHtml = '';
+      if (ai.immediate_actions && ai.immediate_actions.length > 0) {
+        recsHtml += ai.immediate_actions.map(r => `<li class="flex items-start gap-1.5"><span class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-200 uppercase">ACİL</span><span>${r}</span></li>`).join('');
+      }
+      if (ai.strategic_actions && ai.strategic_actions.length > 0) {
+        recsHtml += ai.strategic_actions.map(r => `<li class="flex items-start gap-1.5"><span class="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-800 border border-blue-200 uppercase">SÜREÇ</span><span>${r}</span></li>`).join('');
+      }
+      if (!recsHtml && ai.recommendations && ai.recommendations.length > 0) {
+        recsHtml = ai.recommendations.map(r => `<li>• ${r}</li>`).join('');
+      }
+      recsList.innerHTML = recsHtml || '<li>Mevcut süreç standartlara uygundur.</li>';
+
+      // Cache institutions data
+      window.allInstitutionsData = data.all_institutions || data.top_institutions || [];
+      window.instTableLimit = 10;
+
+      // Charts
+      renderTrendChart(data.daily_trends || []);
+      renderRootCauseChart(s.bug_count || 0, s.support_count || 0, s.suggestion_count || 0);
+      renderPriorityChart(data.priorities || []);
+      renderInstitutionsChart(data.top_institutions || []);
+      renderInstitutionsTable(window.allInstitutionsData, window.instTableLimit);
+
+      // Technician Table
+      renderTechTable(data.technicians || []);
+
+      lucide.createIcons();
+    }
+
+    function renderTrendChart(trends) {
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      if (chartInstances.trend) chartInstances.trend.destroy();
+
+      const labels = trends.map(t => {
+        if (!t.date) return '';
+        const s = String(t.date).trim();
+        const parts = s.split('-');
+        if (parts.length === 3 && parts[0].length === 4) {
+          return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return s;
+      });
+      const createdData = trends.map(t => t.created);
+      const resolvedData = trends.map(t => t.resolved);
+
+      chartInstances.trend = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Yeni Gelen Çağrı',
+              data: createdData,
+              backgroundColor: 'rgba(59, 130, 246, 0.65)',
+              borderColor: '#2563eb',
+              borderWidth: 1,
+              borderRadius: 4,
+            },
+            {
+              label: 'Çözülen Çağrı',
+              data: resolvedData,
+              backgroundColor: 'rgba(16, 185, 129, 0.75)',
+              borderColor: '#059669',
+              borderWidth: 1,
+              borderRadius: 4,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderRootCauseChart(bugs, support, suggestions) {
+      const ctx = document.getElementById('rootCauseChart').getContext('2d');
+      if (chartInstances.rootCause) chartInstances.rootCause.destroy();
+
+      const sugg = suggestions || 0;
+      const labels = sugg > 0 
+        ? ['Hata', 'Destek', 'Öneri'] 
+        : ['Hata', 'Destek'];
+      const dataValues = sugg > 0 
+        ? [bugs, support, sugg] 
+        : [bugs, support];
+      const bgColors = sugg > 0 
+        ? ['#ef4444', '#3b82f6', '#8b5cf6'] 
+        : ['#ef4444', '#3b82f6'];
+
+      chartInstances.rootCause = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataValues,
+            backgroundColor: bgColors,
+            hoverOffset: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const total = bugs + support + sugg;
+                  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+                  return ` ${label}: ${value} (%${pct})`;
+                }
+              }
+            }
+          },
+          cutout: '65%'
+        }
+      });
+
+      const summaryBadge = document.getElementById('rootCauseSummaryBadge');
+      if (summaryBadge) {
+        summaryBadge.innerText = `Toplam: ${bugs + support + sugg} Çağrı`;
+      }
+    }
+
+    function renderPriorityChart(priorities) {
+      const ctx = document.getElementById('priorityChart').getContext('2d');
+      if (chartInstances.priority) chartInstances.priority.destroy();
+
+      const labels = priorities.map(p => p.priority);
+      const totalCounts = priorities.map(p => p.count);
+      const resolvedCounts = priorities.map(p => p.resolved_count !== undefined ? p.resolved_count : p.count);
+      const reopenCounts = priorities.map(p => p.reopen_count !== undefined ? p.reopen_count : 0);
+
+      chartInstances.priority = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Toplam Çağrı',
+              data: totalCounts,
+              backgroundColor: 'rgba(59, 130, 246, 0.75)',
+              borderRadius: 3
+            },
+            {
+              label: 'Çözülen Çağrı',
+              data: resolvedCounts,
+              backgroundColor: 'rgba(16, 185, 129, 0.85)',
+              borderRadius: 3
+            },
+            {
+              label: 'Yeniden Açılan',
+              data: reopenCounts,
+              backgroundColor: 'rgba(245, 158, 11, 0.85)',
+              borderRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderInstitutionsChart(institutions) {
+      const ctx = document.getElementById('institutionsChart').getContext('2d');
+      if (chartInstances.institutions) chartInstances.institutions.destroy();
+
+      const labels = institutions.map(i => i.institution.length > 25 ? i.institution.slice(0, 25) + '...' : i.institution);
+      const bugData = institutions.map(i => i.bug_count || 0);
+      const supportData = institutions.map(i => i.support_count || 0);
+      const suggestionData = institutions.map(i => i.suggestion_count || 0);
+
+      chartInstances.institutions = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Hata',
+              data: bugData,
+              backgroundColor: '#ef4444',
+              stack: 'Stack 0',
+              borderRadius: 3
+            },
+            {
+              label: 'Destek',
+              data: supportData,
+              backgroundColor: '#3b82f6',
+              stack: 'Stack 0',
+              borderRadius: 3
+            },
+            {
+              label: 'Öneri',
+              data: suggestionData,
+              backgroundColor: '#8b5cf6',
+              stack: 'Stack 0',
+              borderRadius: 3
+            }
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (elements && elements.length > 0) {
+              const index = elements[0].index;
+              const inst = institutions[index];
+              if (inst) {
+                openInstitutionDrillDown(inst.institution);
+              }
+            }
+          },
+          onHover: (evt, activeEls) => {
+            evt.native.target.style.cursor = (activeEls && activeEls.length > 0) ? 'pointer' : 'default';
+          },
+          plugins: {
+            legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                afterBody: function(tooltipItems) {
+                  if (tooltipItems && tooltipItems.length > 0) {
+                    const idx = tooltipItems[0].dataIndex;
+                    const inst = institutions[idx];
+                    if (inst) {
+                      const op = inst.op_forwarded_count !== undefined ? inst.op_forwarded_count : (inst.openproject_summary ? inst.openproject_summary.forwarded_count : 0);
+                      return `\n🔄 OpenProject'e İletilen: ${op} çağrı\n(Detaylı kurum analizi için çubuğa tıklayınız)`;
+                    }
+                  }
+                  return '';
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+            y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function toggleInstView() {
+      const chartView = document.getElementById('instChartView');
+      const tableView = document.getElementById('instTableView');
+      const btnLabel = document.getElementById('btnToggleInstViewLabel');
+
+      if (chartView.classList.contains('hidden')) {
+        chartView.classList.remove('hidden');
+        tableView.classList.add('hidden');
+        tableView.classList.remove('flex');
+        btnLabel.innerText = 'Tablo Görünümü';
+      } else {
+        chartView.classList.add('hidden');
+        tableView.classList.remove('hidden');
+        tableView.classList.add('flex');
+        btnLabel.innerText = 'Grafik Görünümü';
+        renderInstitutionsTable(window.allInstitutionsData || [], window.instTableLimit || 10);
+      }
+      lucide.createIcons();
+    }
+
+    function toggleInstTableLimit() {
+      const btn = document.getElementById('instTableLimitBtn');
+      const allData = window.allInstitutionsData || [];
+      if (window.instTableLimit === 10) {
+        window.instTableLimit = allData.length;
+        btn.innerText = 'İlk 10 Kurumu Göster';
+      } else {
+        window.instTableLimit = 10;
+        btn.innerText = 'Tümünü Göster';
+      }
+      filterInstitutionsTable();
+    }
+
+    function filterInstitutionsTable() {
+      const q = (document.getElementById('instSearchInput').value || '').toLowerCase().trim();
+      let list = window.allInstitutionsData || [];
+      if (q) {
+        list = list.filter(i => (i.institution || '').toLowerCase().includes(q));
+      }
+      const limit = q ? list.length : (window.instTableLimit || 10);
+      renderInstitutionsTable(list, limit);
+    }
+
+    function renderInstitutionsTable(institutions, limit) {
+      const tbody = document.getElementById('institutionsTableBody');
+      const badge = document.getElementById('instTableCountBadge');
+      if (!tbody) return;
+
+      const totalCount = institutions.length;
+      const displayList = institutions.slice(0, limit);
+      badge.innerText = `${totalCount} Kurum (${displayList.length} gösteriliyor)`;
+
+      if (displayList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Eşleşen kurum bulunamadı.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = displayList.map(inst => {
+        const opCount = inst.op_forwarded_count !== undefined ? inst.op_forwarded_count : (inst.openproject_summary ? inst.openproject_summary.forwarded_count : 0);
+        const opRate = inst.total_count > 0 ? Math.round((opCount / inst.total_count) * 100) : 0;
+        const safeName = (inst.institution || '').replace(/'/g, "\\'");
+
+        return `
+          <tr class="hover:bg-slate-50 transition group cursor-pointer" onclick="openInstitutionDrillDown('${safeName}')">
+            <td class="py-2.5 px-3 font-semibold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="building-2" class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition"></i>
+              <span class="group-hover:text-blue-600 transition">${inst.institution}</span>
+            </td>
+            <td class="py-2.5 px-2 text-center font-bold text-slate-900">${inst.total_count}</td>
+            <td class="py-2.5 px-2 text-center font-medium text-rose-600">${inst.bug_count || 0}</td>
+            <td class="py-2.5 px-2 text-center font-medium text-blue-600">${inst.support_count || 0}</td>
+            <td class="py-2.5 px-2 text-center">
+              ${(inst.suggestion_count || 0) > 0 
+                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-purple-100 text-purple-800 cursor-help" title="Ek Geliştirme / Ek Hizmet Talebi">${inst.suggestion_count}</span>` 
+                : `<span class="text-slate-400">0</span>`}
+            </td>
+            <td class="py-2.5 px-2 text-center">
+              ${opCount > 0 
+                ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200" title="%${opRate} OpenProject'e iletildi">${opCount} (%${opRate})</span>` 
+                : `<span class="text-slate-400">-</span>`}
+            </td>
+            <td class="py-2.5 px-3 text-right">
+              <button onclick="event.stopPropagation(); openInstitutionDrillDown('${safeName}')" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 transition border border-indigo-200/60 shadow-sm">
+                <span>İncele</span>
+                <i data-lucide="arrow-right" class="w-3 h-3"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // Helper function to clean and humanize OpenProject labels
+    function cleanOpLabel(val, type) {
+      if (!val || val === 'Belirtilmemiş' || val === 'nan' || val === 'None') return 'Belirtilmemiş';
+      let str = String(val).trim();
+
+      if (type === 'demand') {
+        if (str.includes('Hata Talebi')) return 'Hata Talebi';
+        if (str.includes('Destek Talebi')) return 'Destek Talebi';
+        if (str.includes('Ek Geliştirme') || str.includes('Ek Hizmet') || str.includes('Öneri')) return 'Öneri / Ek Hizmet';
+        return str.replace(/^Belgenet\s*/i, '');
+      }
+
+      if (type === 'task') {
+        str = str.replace(/^BN-/, '');
+        if (str.toLowerCase().includes('hata')) return 'Yazılım Hatası (L3)';
+        if (str.toLowerCase().includes('veritabanı') || str.toLowerCase().includes('veritabani')) return 'Veritabanı Görevi';
+        if (str.toLowerCase().includes('deploy') || str.toLowerCase().includes('ugd')) return 'Deploy (UGD)';
+        if (str.toLowerCase().includes('öneri') || str.toLowerCase().includes('oneri')) return 'Geliştirme / Öneri';
+        return str;
+      }
+
+      if (type === 'basket') {
+        str = str.replace(/^BN-/, '');
+        str = str.replace(/\s*Sepetine İlet$/i, ' Sepeti');
+        if (str.toLowerCase().includes('hata')) return 'L3 Hata Sepeti';
+        if (str.toLowerCase().includes('sistem')) return 'L2 Sistem Sepeti';
+        if (str.toLowerCase().includes('iyileştirme') || str.toLowerCase().includes('gelistirme') || str.toLowerCase().includes('geliştirme')) return 'İş Geliştirme Sepeti';
+        if (str.toLowerCase().includes('analiz')) return 'Analiz Sepeti';
+        if (str.toLowerCase().includes('test')) return 'Test Sepeti';
+        return str;
+      }
+
+      return str;
+    }
+
+    // Normalizes dictionary or array into standard [{ name, count }] list
+    function normalizeOpList(inputData, defaultNameKey = 'type') {
+      if (!inputData) return [];
+      if (Array.isArray(inputData)) {
+        return inputData.map(item => ({
+          name: item[defaultNameKey] || item.name || item.basket || item.type || 'Belirtilmemiş',
+          count: Number(item.count) || 0
+        })).filter(x => x.count > 0).sort((a, b) => b.count - a.count);
+      }
+      if (typeof inputData === 'object') {
+        return Object.entries(inputData).map(([key, val]) => ({
+          name: key || 'Belirtilmemiş',
+          count: Number(val) || 0
+        })).filter(x => x.count > 0).sort((a, b) => b.count - a.count);
+      }
+      return [];
+    }
+
+    // Generates human-friendly Executive Flow Summary sentence
+    function generateExecutiveSummary(inst, opSummary, demands, tasks, baskets) {
+      const total = inst.total_count || 0;
+      const opCount = inst.op_forwarded_count !== undefined ? inst.op_forwarded_count : (opSummary.forwarded_count || 0);
+      const bugs = inst.bug_count || 0;
+      const support = inst.support_count || 0;
+      const suggestions = inst.suggestion_count || 0;
+
+      if (total === 0) return 'Bu kuruma ait kayıtlı çağrı bulunmuyor.';
+      if (opCount === 0) {
+        return `Bu kurumun toplam <strong>${total}</strong> çağrısının tamamı Servis Masası (L1) bünyesinde çözümlenmiş olup harici bir ekibe eskalasyon yapılmamıştır.`;
+      }
+
+      const parts = [];
+      const opRate = Math.round((opCount / total) * 100);
+      parts.push(`Bu kurumun kayıtlı <strong>${total}</strong> çağrısından <strong>${opCount}</strong> adedi (%${opRate}) harici ekiplere iletilmiştir.`);
+
+      const typePieces = [];
+      if (bugs > 0) typePieces.push(`<strong>${bugs}</strong>'i Hata`);
+      if (support > 0) typePieces.push(`<strong>${support}</strong>'ü Destek`);
+      if (suggestions > 0) typePieces.push(`<strong>${suggestions}</strong>'i Öneri`);
+      if (typePieces.length) {
+        parts.push(`Taleplerin ${typePieces.join(', ')} niteliğindedir.`);
+      }
+
+      if (baskets && baskets.length > 0) {
+        const topBaskets = baskets.slice(0, 2).map(b => `<strong>${b.count}</strong> çağrı ${cleanOpLabel(b.name, 'basket')}`);
+        parts.push(`Eskalasyon kapsamında ${topBaskets.join(' ve ')} kuyruğuna sevk edilmiştir.`);
+      }
+
+      return parts.join(' ');
+    }
+
+    // Tab Switching for Institution Modal
+    function switchInstModalTab(tabName) {
+      const summaryBtn = document.getElementById('instTabSummaryBtn');
+      const ticketsBtn = document.getElementById('instTabTicketsBtn');
+      const summaryContent = document.getElementById('instTabSummaryContent');
+      const ticketsContent = document.getElementById('instTabTicketsContent');
+
+      if (!summaryBtn || !ticketsBtn) return;
+
+      if (tabName === 'summary') {
+        summaryBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition duration-150 bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-xs';
+        ticketsBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-xs transition duration-150 text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+        summaryContent.classList.remove('hidden');
+        ticketsContent.classList.add('hidden');
+      } else {
+        ticketsBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs transition duration-150 bg-blue-50 text-blue-700 border border-blue-200 shadow-xs';
+        summaryBtn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-xs transition duration-150 text-slate-600 hover:text-slate-900 hover:bg-slate-100';
+        summaryContent.classList.add('hidden');
+        ticketsContent.classList.remove('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function openInstitutionDrillDown(instName) {
+      const modal = document.getElementById('institutionDetailModal');
+      const allData = window.allInstitutionsData || [];
+      const inst = allData.find(i => i.institution === instName);
+      if (!inst) {
+        console.warn('Kurum bulunamadı:', instName);
+        return;
+      }
+
+      // Title & Badges
+      document.getElementById('modalInstTitle').innerText = inst.institution;
+      const opSummary = inst.openproject_summary || {};
+      const opCount = inst.op_forwarded_count !== undefined ? inst.op_forwarded_count : (opSummary.forwarded_count || 0);
+      const opRate = inst.total_count > 0 ? Math.round((opCount / inst.total_count) * 100) : 0;
+      document.getElementById('modalOpForwardedBadge').innerText = `${opCount} OP İletimi (%${opRate})`;
+
+      // KPIs
+      document.getElementById('modalKpiTotal').innerText = inst.total_count || 0;
+      document.getElementById('modalKpiBugs').innerText = inst.bug_count || 0;
+      document.getElementById('modalKpiBugRate').innerText = `%${inst.bug_percentage || 0} Hata Payı`;
+      document.getElementById('modalKpiSupport').innerText = inst.support_count || 0;
+      document.getElementById('modalKpiSuggestions').innerText = inst.suggestion_count || 0;
+      document.getElementById('modalKpiOp').innerText = opCount;
+      document.getElementById('modalKpiOpRate').innerText = `%${opRate} İletim Oranı`;
+
+      // Update Ticket count badge on Tab button
+      const ticketsPreview = inst.tickets_preview || [];
+      const tabTicketCountEl = document.getElementById('modalTabTicketCount');
+      if (tabTicketCountEl) tabTicketCountEl.innerText = ticketsPreview.length;
+
+      // Normalize parameters (supporting both dicts and arrays)
+      const demands = normalizeOpList(opSummary.demand_types || opSummary.raw_demand_types, 'type');
+      const tasks = normalizeOpList(opSummary.task_types, 'type');
+      const baskets = normalizeOpList(opSummary.baskets, 'basket');
+      const crossMatrix = opSummary.cross_matrix || [];
+
+      // Executive Flow Insight
+      const execTextEl = document.getElementById('modalExecutiveText');
+      if (execTextEl) {
+        execTextEl.innerHTML = generateExecutiveSummary(inst, opSummary, demands, tasks, baskets);
+      }
+
+      const demandListEl = document.getElementById('modalDemandList');
+      const taskListEl = document.getElementById('modalTaskList');
+      const basketListEl = document.getElementById('modalBasketList');
+      const emptyNotice = document.getElementById('modalOpEmptyNotice');
+      const cardsContainer = document.getElementById('modalOpCardsContainer');
+      const crossSection = document.getElementById('modalCrossMatrixSection');
+
+      if (opCount === 0) {
+        cardsContainer.classList.add('hidden');
+        crossSection.classList.add('hidden');
+        emptyNotice.classList.remove('hidden');
+      } else {
+        cardsContainer.classList.remove('hidden');
+        crossSection.classList.remove('hidden');
+        emptyNotice.classList.add('hidden');
+
+        // Demands
+        demandListEl.innerHTML = demands.length ? demands.map(d => {
+          const pct = opCount > 0 ? Math.round((d.count / opCount) * 100) : 0;
+          const label = cleanOpLabel(d.name, 'demand');
+          const isBug = label.includes('Hata');
+          const isSug = label.includes('Öneri') || label.includes('Geliştirme');
+          const barColor = isBug ? 'bg-rose-500' : (isSug ? 'bg-purple-500' : 'bg-blue-500');
+          const numColor = isBug ? 'text-rose-700' : (isSug ? 'text-purple-700' : 'text-blue-700');
+
+          return `
+            <div class="p-2 rounded-lg bg-slate-50/80 border border-slate-100 hover:bg-slate-100/70 transition">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-medium text-slate-700 truncate" title="${d.name}">${label}</span>
+                <span class="font-bold ${numColor} shrink-0">${d.count} <span class="text-[10px] text-slate-400 font-normal">(%${pct})</span></span>
+              </div>
+              <div class="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                <div class="${barColor} h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') : '<p class="text-slate-400 text-xs italic py-2 text-center">Talep verisi bulunamadı</p>';
+
+        // Tasks
+        taskListEl.innerHTML = tasks.length ? tasks.map(t => {
+          const pct = opCount > 0 ? Math.round((t.count / opCount) * 100) : 0;
+          const label = cleanOpLabel(t.name, 'task');
+          const isBug = label.toLowerCase().includes('hata');
+          const isSug = label.toLowerCase().includes('öneri') || label.toLowerCase().includes('geliştirme');
+          const isSys = label.toLowerCase().includes('veritabanı') || label.toLowerCase().includes('deploy');
+          const barColor = isBug ? 'bg-rose-500' : (isSug ? 'bg-purple-500' : (isSys ? 'bg-blue-600' : 'bg-slate-600'));
+          const numColor = isBug ? 'text-rose-700' : (isSug ? 'text-purple-700' : (isSys ? 'text-blue-700' : 'text-slate-700'));
+
+          return `
+            <div class="p-2 rounded-lg bg-slate-50/80 border border-slate-100 hover:bg-slate-100/70 transition">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-medium text-slate-700 truncate" title="${t.name}">${label}</span>
+                <span class="font-bold ${numColor} shrink-0">${t.count} <span class="text-[10px] text-slate-400 font-normal">(%${pct})</span></span>
+              </div>
+              <div class="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                <div class="${barColor} h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') : '<p class="text-slate-400 text-xs italic py-2 text-center">Görev verisi bulunamadı</p>';
+
+        // Baskets
+        basketListEl.innerHTML = baskets.length ? baskets.map(b => {
+          const pct = opCount > 0 ? Math.round((b.count / opCount) * 100) : 0;
+          const label = cleanOpLabel(b.name, 'basket');
+          const isBugBasket = label.toLowerCase().includes('hata');
+          const isSysBasket = label.toLowerCase().includes('sistem');
+          const isBizBasket = label.toLowerCase().includes('geliştirme') || label.toLowerCase().includes('iyileştirme');
+          const barColor = isBugBasket ? 'bg-rose-500' : (isSysBasket ? 'bg-amber-500' : (isBizBasket ? 'bg-purple-500' : 'bg-slate-500'));
+          const numColor = isBugBasket ? 'text-rose-700' : (isSysBasket ? 'text-amber-700' : (isBizBasket ? 'text-purple-700' : 'text-slate-700'));
+
+          return `
+            <div class="p-2 rounded-lg bg-slate-50/80 border border-slate-100 hover:bg-slate-100/70 transition">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-medium text-slate-700 truncate" title="${b.name}">${label}</span>
+                <span class="font-bold ${numColor} shrink-0">${b.count} <span class="text-[10px] text-slate-400 font-normal">(%${pct})</span></span>
+              </div>
+              <div class="w-full bg-slate-200/80 rounded-full h-1.5 overflow-hidden">
+                <div class="${barColor} h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') : '<p class="text-slate-400 text-xs italic py-2 text-center">Sepet verisi bulunamadı</p>';
+
+        // Cross Matrix Body
+        const crossBody = document.getElementById('modalCrossMatrixBody');
+        if (crossMatrix.length === 0) {
+          crossBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 italic">Eşleşen akış verisi bulunamadı.</td></tr>`;
+        } else {
+          crossBody.innerHTML = crossMatrix.map(cm => {
+            const pct = opCount > 0 ? Math.round((cm.count / opCount) * 100) : 0;
+            const cleanDemand = cleanOpLabel(cm.demand_type || cm.canonical_type, 'demand');
+            const cleanTask = cleanOpLabel(cm.task_type, 'task');
+            const cleanBasket = cleanOpLabel(cm.basket, 'basket');
+
+            const isBug = cleanBasket.toLowerCase().includes('hata');
+            const isSys = cleanBasket.toLowerCase().includes('sistem');
+            const badgeColor = isBug 
+              ? 'bg-rose-50 text-rose-700 border-rose-200' 
+              : (isSys ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-purple-50 text-purple-700 border-purple-200');
+
+            return `
+              <tr class="hover:bg-slate-50/70 transition">
+                <td class="py-2 px-3 font-semibold text-indigo-700" title="${cm.demand_type}">${cleanDemand}</td>
+                <td class="py-2 px-3 text-slate-700 font-medium" title="${cm.task_type}">${cleanTask}</td>
+                <td class="py-2 px-3">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold ${badgeColor} border" title="${cm.basket}">
+                    ${cleanBasket}
+                  </span>
+                </td>
+                <td class="py-2 px-3 text-center font-bold text-slate-900">${cm.count}</td>
+                <td class="py-2 px-3 text-right text-slate-500 font-medium">%${pct}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // Ticket preview setup
+      window.currentModalTickets = ticketsPreview;
+      document.getElementById('modalTicketSearch').value = '';
+      document.getElementById('modalTicketTypeFilter').value = 'all';
+      renderModalTickets(window.currentModalTickets);
+
+      // Default to summary tab on open
+      switchInstModalTab('summary');
+
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      lucide.createIcons();
+    }
+
+    function closeInstitutionDrillDown() {
+      const modal = document.getElementById('institutionDetailModal');
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    function handleBackdropClick(evt) {
+      if (evt.target && evt.target.id === 'institutionDetailModal') {
+        closeInstitutionDrillDown();
+      }
+    }
+
+    // Keyboard ESC listener
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeInstitutionDrillDown();
+      }
+    });
+
+    function filterModalTickets() {
+      const q = (document.getElementById('modalTicketSearch').value || '').toLowerCase().trim();
+      const typeFilter = document.getElementById('modalTicketTypeFilter').value;
+      let tickets = window.currentModalTickets || [];
+
+      if (typeFilter === 'op_only') {
+        tickets = tickets.filter(t => t.is_op_forwarded);
+      } else if (typeFilter === 'Hata') {
+        tickets = tickets.filter(t => t.root_cause === 'Hata');
+      } else if (typeFilter === 'Destek') {
+        tickets = tickets.filter(t => t.root_cause === 'Destek');
+      } else if (typeFilter === 'Öneri') {
+        tickets = tickets.filter(t => t.root_cause === 'Öneri');
+      }
+
+      if (q) {
+        tickets = tickets.filter(t => 
+          (t.ticket_id || '').toLowerCase().includes(q) ||
+          (t.title || '').toLowerCase().includes(q) ||
+          (t.technician || '').toLowerCase().includes(q) ||
+          (t.op_basket || '').toLowerCase().includes(q) ||
+          cleanOpLabel(t.op_basket, 'basket').toLowerCase().includes(q) ||
+          (t.op_request_type || '').toLowerCase().includes(q) ||
+          cleanOpLabel(t.op_request_type, 'demand').toLowerCase().includes(q) ||
+          (t.op_task_type || '').toLowerCase().includes(q) ||
+          cleanOpLabel(t.op_task_type, 'task').toLowerCase().includes(q) ||
+          (t.status || '').toLowerCase().includes(q)
+        );
+      }
+
+      renderModalTickets(tickets);
+    }
+
+    function renderModalTickets(tickets) {
+      const tbody = document.getElementById('modalTicketTableBody');
+      const badge = document.getElementById('modalTicketCountBadge');
+      if (!tbody) return;
+
+      badge.innerText = `${tickets.length} çağrı listeleniyor`;
+
+      if (tickets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 font-medium">Filtreye uygun çağrı bulunamadı.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = tickets.map(t => {
+        let rcBadge = '';
+        if (t.root_cause === 'Hata') {
+          rcBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">HATA</span>';
+        } else if (t.root_cause === 'Öneri') {
+          rcBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 cursor-help" title="Ek Geliştirme / Ek Hizmet Talebi">ÖNERİ</span>';
+        } else {
+          rcBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200">DESTEK</span>';
+        }
+
+        let statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">${t.status}</span>`;
+        const sLower = (t.status || '').toLowerCase();
+        if (sLower.includes('çöz') || sLower.includes('kapa')) {
+          statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">${t.status}</span>`;
+        } else if (sLower.includes('bekle')) {
+          statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">${t.status}</span>`;
+        } else if (sLower.includes('işlen') || sLower.includes('yeni')) {
+          statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200">${t.status}</span>`;
+        }
+
+        let basketBadge = '<span class="text-slate-400">-</span>';
+        if (t.op_basket) {
+          const cleanBasket = cleanOpLabel(t.op_basket, 'basket');
+          const isBug = cleanBasket.toLowerCase().includes('hata');
+          const isSys = cleanBasket.toLowerCase().includes('sistem');
+          const bColor = isBug ? 'bg-rose-50 text-rose-700 border-rose-200' : (isSys ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-purple-50 text-purple-700 border-purple-200');
+          basketBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${bColor} border" title="${t.op_basket}">${cleanBasket}</span>`;
+        }
+
+        const cleanReq = t.op_request_type ? cleanOpLabel(t.op_request_type, 'demand') : '-';
+        const cleanTask = t.op_task_type ? cleanOpLabel(t.op_task_type, 'task') : '-';
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition text-slate-700">
+            <td class="py-2.5 px-3 font-mono font-bold text-slate-900">${t.ticket_id}</td>
+            <td class="py-2.5 px-3 font-medium text-slate-800 max-w-[280px] truncate" title="${(t.title || '').replace(/"/g, '&quot;')}">${t.title || '-'}</td>
+            <td class="py-2.5 px-2 text-center">${rcBadge}</td>
+            <td class="py-2.5 px-2 text-center font-medium text-indigo-700" title="${t.op_request_type || ''}">${cleanReq}</td>
+            <td class="py-2.5 px-2 text-center text-slate-700" title="${t.op_task_type || ''}">${cleanTask}</td>
+            <td class="py-2.5 px-2 text-center">${basketBadge}</td>
+            <td class="py-2.5 px-2 text-center">${statusBadge}</td>
+            <td class="py-2.5 px-3 text-slate-600 truncate max-w-[140px]" title="${t.technician || ''}">${t.technician || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderTechTable(technicians) {
+      const tbody = document.getElementById('techTableBody');
+
+      const isUnassigned = (name) => {
+        const s = (name || '').toLowerCase().trim();
+        return s === 'atanmamış' || s === 'atanmamis' || s === 'atanmayan' || s === 'belirtilmemiş' || s === '-' || s === 'none' || s === 'nan';
+      };
+
+      const actualStaffCount = (technicians || []).filter(t => !isUnassigned(t.technician)).length;
+      document.getElementById('techCountLabel').innerText = `${actualStaffCount} Personel`;
+
+      if (!technicians || technicians.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Personel kaydı bulunamadı.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = technicians.map(t => {
+        const unassigned = isUnassigned(t.technician);
+        const nameDisplay = unassigned
+          ? `<span class="italic text-slate-500 font-medium">${t.technician}</span>
+             <span class="ml-1 text-[10px] font-normal text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">Atama Bekliyor</span>`
+          : `<span class="font-semibold text-slate-800">${t.technician}</span>
+             <span class="ml-1 text-[10px] font-normal text-slate-400">(${t.team || 'Servis Masası'})</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-4">
+              ${nameDisplay}
+            </td>
+            <td class="py-3 px-3 text-center font-bold text-slate-800">${t.assigned_count}</td>
+            <td class="py-3 px-3 text-center font-bold text-emerald-600">${t.resolved_count}</td>
+            <td class="py-3 px-3 text-center font-medium text-slate-700">%${t.resolution_rate}</td>
+            <td class="py-3 px-3 text-center font-semibold text-purple-700">${t.avg_net_resolution_hours > 0 ? `${t.avg_net_resolution_hours} sa` : '-'}</td>
+            <td class="py-3 px-3 text-center text-slate-600">${t.avg_first_response_minutes > 0 ? `${t.avg_first_response_minutes} dk` : '<span class="text-slate-400" title="GLPI aktarımında süre girilmemiş">-</span>'}</td>
+            <td class="py-3 px-3 text-center text-slate-500">${t.avg_external_wait_hours > 0 ? `${t.avg_external_wait_hours} sa` : '<span class="text-slate-400" title="Bekleme süresi verisi yok">-</span>'}</td>
+            <td class="py-3 px-4 text-center">${t.reopen_rate > 0 ? `<span class="text-amber-700 font-bold">%${t.reopen_rate}</span>` : '<span class="text-slate-400">%0</span>'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function exportExcel() {
+      const url = `/api/v1/reports/${currentReportType}/export-excel?days=${currentDays}&source=${currentSource}&segment=${currentSegment}`;
+      window.location.href = url;
+    }
+
+    // Ad-Hoc Analytics (Qwen & Pandas) Panel & Query Logic
+    function toggleAdHocPanel(forceOpen = false) {
+      const body = document.getElementById('adHocPanelBody');
+      const text = document.getElementById('adHocToggleText');
+      const chevron = document.getElementById('adHocToggleChevron');
+      if (!body) return;
+
+      const isHidden = body.classList.contains('hidden');
+      const shouldOpen = forceOpen ? true : isHidden;
+
+      if (shouldOpen) {
+        body.classList.remove('hidden');
+        if (text) text.innerText = 'Analisti Kapat';
+        if (chevron) chevron.classList.add('rotate-180');
+        if (window.lucide) lucide.createIcons();
+      } else {
+        body.classList.add('hidden');
+        if (text) text.innerText = 'Analisti Aç';
+        if (chevron) chevron.classList.remove('rotate-180');
+      }
+    }
+
+    function openAndScrollToAdHoc() {
+      toggleAdHocPanel(true);
+      const container = document.getElementById('adHocPanelContainer');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      const input = document.getElementById('adHocQueryInput');
+      if (input) {
+        setTimeout(() => input.focus(), 350);
+      }
+    }
+
+    function fillAdHocPrompt(promptText) {
+      toggleAdHocPanel(true);
+      const input = document.getElementById('adHocQueryInput');
+      if (input) {
+        input.value = promptText;
+        submitAdHocQuery();
+      }
+    }
+
+    async function submitAdHocQuery() {
+      toggleAdHocPanel(true);
+      const input = document.getElementById('adHocQueryInput');
+      const query = input ? input.value.trim() : '';
+      if (!query) {
+        alert('Lütfen bir analiz sorusu veya sorgulamak istediğiniz konuyu yazınız.');
+        return;
+      }
+
+      const btn = document.getElementById('btnAdHocSubmit');
+      const btnText = document.getElementById('btnAdHocText');
+      const prevText = btnText ? btnText.innerText : 'Analiz Et & Çiz';
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = 'Analiz Ediliyor...';
+
+      const container = document.getElementById('adHocResultContainer');
+      const guardrailAlert = document.getElementById('adHocGuardrailAlert');
+      const guardrailText = document.getElementById('adHocGuardrailText');
+      const content = document.getElementById('adHocContent');
+
+      try {
+        const resp = await fetch('/api/v1/ai/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: query,
+            report_type: currentReportType,
+            source: currentSource,
+            days: currentDays,
+            segment: currentSegment
+          })
+        });
+
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.detail || 'Analiz sırasında bir sunucu hatası oluştu.');
+        }
+
+        const data = await resp.json();
+        if (container) container.classList.remove('hidden');
+
+        if (!data.is_applicable) {
+          if (guardrailAlert) guardrailAlert.classList.remove('hidden');
+          if (guardrailText) guardrailText.innerText = data.refusal_reason || data.answer_text;
+          if (content) content.classList.add('hidden');
+          lucide.createIcons();
+          return;
+        }
+
+        // Kapsam dahilinde geçerli sonuç
+        if (guardrailAlert) guardrailAlert.classList.add('hidden');
+        if (content) content.classList.remove('hidden');
+
+        // 1. Uygulanan filtre badge
+        const interpEl = document.getElementById('adHocInterpretationBadge');
+        if (interpEl) interpEl.innerText = data.query_interpretation || 'Tüm Operasyonel Veri';
+
+        // 2. Özet kartlar
+        const cardsRow = document.getElementById('adHocCardsRow');
+        if (cardsRow && data.summary_cards) {
+          cardsRow.innerHTML = data.summary_cards.map(c => {
+            let colorCls = 'bg-blue-50 text-blue-700 border-blue-200';
+            if (c.color === 'emerald') colorCls = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            else if (c.color === 'purple') colorCls = 'bg-purple-50 text-purple-700 border-purple-200';
+            else if (c.color === 'amber') colorCls = 'bg-amber-50 text-amber-700 border-amber-200';
+            return `
+              <div class="px-2.5 py-1 rounded-lg text-xs font-semibold ${colorCls} border flex items-center gap-1.5 shadow-xs">
+                <span class="text-slate-500 font-normal">${c.label}:</span>
+                <span>${c.value}</span>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // 3. Yönetici anlatım metni
+        const narrativeEl = document.getElementById('adHocNarrativeText');
+        if (narrativeEl) {
+          narrativeEl.innerHTML = (data.answer_text || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        }
+
+        // 4. Dinamik Grafik
+        renderAdHocChart(data.chart);
+
+        // 5. Dinamik Dağılım Tablosu
+        renderAdHocTable(data.table, data.matched_count);
+
+        lucide.createIcons();
+      } catch (err) {
+        alert('Analiz yapılırken hata oluştu: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = prevText;
+      }
+    }
+
+    function renderAdHocChart(chartData) {
+      if (chartInstances['adHocChart']) {
+        chartInstances['adHocChart'].destroy();
+      }
+      const canvas = document.getElementById('adHocChart');
+      if (!canvas) return;
+
+      const titleEl = document.getElementById('adHocChartTitle');
+      if (titleEl && chartData && chartData.title) titleEl.innerText = chartData.title;
+
+      if (!chartData || !chartData.has_chart || !chartData.labels || chartData.labels.length === 0) {
+        return;
+      }
+
+      const ctx = canvas.getContext('2d');
+      const isDoughnut = chartData.type === 'doughnut';
+
+      chartInstances['adHocChart'] = new Chart(ctx, {
+        type: chartData.type || 'doughnut',
+        data: {
+          labels: chartData.labels,
+          datasets: [{
+            label: chartData.group_label || 'Adet',
+            data: chartData.data,
+            backgroundColor: chartData.colors || [
+              '#2563eb', '#3b82f6', '#059669', '#10b981', '#d97706', '#f59e0b', '#7c3aed', '#8b5cf6', '#e11d48', '#64748b'
+            ],
+            borderRadius: isDoughnut ? 0 : 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: isDoughnut,
+              position: 'right',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          scales: isDoughnut ? {} : {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderAdHocTable(tableData, totalCount) {
+      const countBadge = document.getElementById('adHocTableCountBadge');
+      if (countBadge) countBadge.innerText = `${totalCount || 0} Kayıt`;
+
+      const headersEl = document.getElementById('adHocTableHeaders');
+      if (headersEl && tableData && tableData.headers) {
+        headersEl.innerHTML = tableData.headers.map((h, idx) => {
+          const align = idx === 0 ? 'text-left' : 'text-right';
+          const round = idx === 0 ? 'rounded-l-lg' : (idx === tableData.headers.length - 1 ? 'rounded-r-lg' : '');
+          return `<th class="py-2 px-3 ${align} ${round}">${h}</th>`;
+        }).join('');
+      }
+
+      const tbody = document.getElementById('adHocTableBody');
+      if (tbody && tableData && tableData.rows) {
+        if (tableData.rows.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-slate-400">Kayıt bulunamadı.</td></tr>';
+        } else {
+          tbody.innerHTML = tableData.rows.map(row => `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="py-2.5 px-3 text-slate-800 font-medium truncate max-w-[160px]" title="${row[0]}">${row[0]}</td>
+              <td class="py-2.5 px-3 text-right text-slate-700 font-bold">${row[1]}</td>
+              <td class="py-2.5 px-3 text-right text-indigo-600 font-bold">${row[2]}</td>
+            </tr>
+          `).join('');
+        }
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="metrikaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="barGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect width="64" height="64" rx="16" fill="url(#metrikaGrad)" />
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+
+  <!-- 3 Rising Metric Bars (METRİKA Analytics) -->
+  <!-- Bar 1 (Left - Shortest) -->
+  <rect x="13" y="33" width="10" height="18" rx="5" fill="url(#barGrad)" opacity="0.88" />
+  
+  <!-- Bar 2 (Center - Medium) -->
+  <rect x="27" y="22" width="10" height="29" rx="5" fill="url(#barGrad)" opacity="0.95" />
+  
+  <!-- Bar 3 (Right - Tallest) -->
+  <rect x="41" y="12" width="10" height="39" rx="5" fill="#ffffff" />
+  
+  <!-- Modern Analytics Pulse Dot -->
+  <circle cx="46" cy="17" r="2.2" fill="#38bdf8" />
+</svg>
