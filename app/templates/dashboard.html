@@ -874,20 +874,28 @@
 
       <!-- Chart 2: Kök Neden & SLA Uyum Dağılımı -->
       <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
             <h3 class="text-sm font-bold text-slate-800">Kök Neden & Öncelik Dağılımı</h3>
             <p class="text-xs text-slate-500">Hata, Destek ve Öneri dağılımı ile öncelik seviyeleri</p>
           </div>
-          <span class="p-1.5 rounded-lg bg-slate-100 text-slate-600">
-            <i data-lucide="pie-chart" class="w-4 h-4"></i>
-          </span>
+          <div class="flex items-center space-x-2 self-start sm:self-auto">
+            <!-- Subchart View Switcher -->
+            <div class="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200 text-xs">
+              <button type="button" id="btnSubchartDual" onclick="switchSubchartView('dual')" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-slate-900 shadow-2xs transition">İkili Görünüm</button>
+              <button type="button" id="btnSubchartRoot" onclick="switchSubchartView('root')" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition">Kök Neden</button>
+              <button type="button" id="btnSubchartPriority" onclick="switchSubchartView('priority')" class="px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition">Öncelik</button>
+            </div>
+            <span class="p-1.5 rounded-lg bg-slate-100 text-slate-600 hidden sm:inline-flex">
+              <i data-lucide="pie-chart" class="w-4 h-4"></i>
+            </span>
+          </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center">
-          <div class="relative h-[220px]">
+        <div id="subchartGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center">
+          <div id="rootCauseContainer" class="relative h-[220px]">
             <canvas id="rootCauseChart"></canvas>
           </div>
-          <div class="relative h-[220px]">
+          <div id="priorityContainer" class="relative h-[220px]">
             <canvas id="priorityChart"></canvas>
           </div>
         </div>
@@ -909,6 +917,10 @@
             <p class="text-xs text-slate-500 mt-0.5">Grafikteki kurumlara veya tablodaki <strong>İncele</strong> butonuna tıklayarak Talep Tipi, Görev Tipi ve Sepet detaylarını görebilirsiniz.</p>
           </div>
           <div class="flex items-center space-x-2">
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-indigo-600"></i>
+              <span>Çubuğa tıklayarak kurum analizi açın</span>
+            </span>
             <button id="btnToggleInstView" onclick="toggleInstView()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1.5 shadow-sm">
               <i data-lucide="table" class="w-3.5 h-3.5"></i>
               <span id="btnToggleInstViewLabel">Tablo Görünümü</span>
@@ -924,7 +936,15 @@
           <div class="relative min-h-[290px]">
             <canvas id="institutionsChart"></canvas>
           </div>
-          <p class="text-[11px] text-slate-400 text-right mt-1.5 italic">* İlgili kurumun OpenProject sepet, görev ve çağrı detayları için grafik çubuğuna tıklayınız.</p>
+          <div class="mt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-500 pt-1 border-t border-slate-50">
+            <span class="inline-flex items-center gap-1 text-slate-500">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500 shrink-0"></i>
+              <span>Kırmızı: Hata &bull; Mavi: Destek &bull; Mor: Öneri (Ek Hizmet)</span>
+            </span>
+            <span class="text-indigo-600 cursor-pointer hover:underline font-medium" onclick="toggleInstView()">
+              Tüm kurumları tabloda filtrele &rarr;
+            </span>
+          </div>
         </div>
 
         <!-- Table View -->
@@ -1638,6 +1658,54 @@
           }
         }
       });
+    }
+
+    function switchSubchartView(mode) {
+      const grid = document.getElementById('subchartGrid');
+      const rootContainer = document.getElementById('rootCauseContainer');
+      const priorityContainer = document.getElementById('priorityContainer');
+      const btnDual = document.getElementById('btnSubchartDual');
+      const btnRoot = document.getElementById('btnSubchartRoot');
+      const btnPriority = document.getElementById('btnSubchartPriority');
+
+      if (!grid || !rootContainer || !priorityContainer) return;
+
+      const btnInactive = "px-2.5 py-1 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition";
+      const btnActive = "px-2.5 py-1 rounded-md text-xs font-semibold bg-white text-slate-900 shadow-2xs transition";
+
+      if (mode === 'dual') {
+        grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center";
+        rootContainer.className = "relative h-[220px]";
+        priorityContainer.className = "relative h-[220px]";
+        rootContainer.classList.remove('hidden');
+        priorityContainer.classList.remove('hidden');
+        if (btnDual) btnDual.className = btnActive;
+        if (btnRoot) btnRoot.className = btnInactive;
+        if (btnPriority) btnPriority.className = btnInactive;
+      } else if (mode === 'root') {
+        grid.className = "flex flex-col flex-1 items-center justify-center";
+        rootContainer.className = "relative h-[260px] w-full max-w-sm mx-auto";
+        priorityContainer.className = "relative h-[220px] hidden";
+        rootContainer.classList.remove('hidden');
+        priorityContainer.classList.add('hidden');
+        if (btnDual) btnDual.className = btnInactive;
+        if (btnRoot) btnRoot.className = btnActive;
+        if (btnPriority) btnPriority.className = btnInactive;
+      } else if (mode === 'priority') {
+        grid.className = "flex flex-col flex-1";
+        rootContainer.className = "relative h-[220px] hidden";
+        priorityContainer.className = "relative h-[260px] w-full";
+        rootContainer.classList.add('hidden');
+        priorityContainer.classList.remove('hidden');
+        if (btnDual) btnDual.className = btnInactive;
+        if (btnRoot) btnRoot.className = btnInactive;
+        if (btnPriority) btnPriority.className = btnActive;
+      }
+
+      setTimeout(() => {
+        if (chartInstances.rootCause) chartInstances.rootCause.resize();
+        if (chartInstances.priority) chartInstances.priority.resize();
+      }, 60);
     }
 
     function renderInstitutionsChart(institutions) {
