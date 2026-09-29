@@ -119,7 +119,7 @@ class ExecutiveInsightsEngine:
         ][:3]
 
         return {
-            "source": "heuristic_expert_rules",
+            "source": "Kural Tabanlı Analiz",
             "health_status": health_status,
             "health_color": health_color,
             "executive_summary": (

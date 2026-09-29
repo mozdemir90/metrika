@@ -110,11 +110,10 @@
 
   <!-- Filter & Control Bar -->
   <section class="bg-white border-b border-slate-200 shadow-sm sticky top-16 z-20">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <!-- Filter Tabs / Controls -->
-        <div class="flex flex-wrap items-center gap-3">
-          
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5">
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+        <!-- Filter Tabs / Controls (Left) -->
+        <div class="flex flex-wrap items-center gap-2.5">
           <!-- Team Segment Selector (Servis Masası vs Sistem) -->
           <div id="segmentSelectorGroup" class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs font-medium text-slate-600">
             <button onclick="setSegment('all')" id="btnSegAll" class="px-3 py-1.5 rounded-md transition font-semibold bg-white text-blue-700 shadow-sm flex items-center space-x-1.5">
@@ -138,24 +137,20 @@
             <button onclick="setDays(30)" id="btnDays30" class="px-2.5 py-1.5 rounded-md transition hover:text-slate-900">Son 30 Gün</button>
             <button onclick="setDays(0)" id="btnDays0" class="px-2.5 py-1.5 rounded-md transition hover:text-slate-900">Tüm Veri</button>
           </div>
-
-          <!-- Data Source Selector -->
-          <div class="flex items-center space-x-2">
-            <select id="sourceSelect" onchange="changeSource()" class="text-xs bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="upload" id="optUploadSource" selected>Yüklenen Dosya Verisi</option>
-              <option value="glpi">Canlı GLPI API</option>
-              <option value="mock">Simülasyon / Test Verisi</option>
-            </select>
-          </div>
         </div>
 
-        <!-- Connection Status Indicator -->
-        <div class="flex items-center justify-between md:justify-end space-x-2 text-xs">
-          <span id="activeSourceBadge" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-            <span class="w-2 h-2 rounded-full bg-blue-600 mr-1.5 animate-pulse"></span>
-            <span id="activeSourceLabel">Veri Kaynağı: GLPI API</span>
-          </span>
-          <button onclick="fetchData()" title="Yenile" class="p-1.5 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition">
+        <!-- Right: Integrated Data Source Selector & Refresh Button (Symmetrical & Clean) -->
+        <div class="flex items-center justify-between lg:justify-end gap-2 text-xs shrink-0">
+          <div id="activeSourceBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+            <span id="activeSourceDot" class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+            <span id="activeSourceLabel" class="text-[11px] text-slate-500 font-medium">Kaynak:</span>
+            <select id="sourceSelect" onchange="changeSource()" class="text-xs bg-transparent font-semibold text-slate-800 focus:outline-none cursor-pointer">
+              <option value="upload" id="optUploadSource" selected>Yüklenen Dosya</option>
+              <option value="glpi">Canlı GLPI API</option>
+              <option value="mock">Simülasyon / Test</option>
+            </select>
+          </div>
+          <button onclick="fetchData()" title="Verileri Yenile" class="p-2 text-slate-500 hover:text-blue-600 rounded-lg hover:bg-slate-100 transition border border-slate-200 shadow-2xs cursor-pointer">
             <i data-lucide="rotate-cw" class="w-4 h-4"></i>
           </button>
         </div>
@@ -441,184 +436,210 @@
   <!-- Main Content Container -->
   <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 w-full">
 
-    <!-- Smart Column Mapping Banner -->
-    <div id="mappingAlert" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-blue-900 shadow-sm">
+    <!-- Smart Column Mapping Banner (Auto-dismissing) -->
+    <div id="mappingAlert" class="hidden bg-blue-50 border border-blue-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-blue-900 shadow-sm transition-all duration-300">
       <div class="flex items-center space-x-2.5">
-        <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-600 flex-shrink-0"></i>
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-600 flex-shrink-0"></i>
         <div>
           <span class="font-bold">Akıllı Sütun Eşleme: </span>
           <span id="mappingSummaryText" class="text-blue-800">Sütunlar başarıyla tespit edildi.</span>
         </div>
       </div>
-      <button onclick="document.getElementById('mappingAlert').classList.add('hidden')" class="text-blue-500 hover:text-blue-700 text-[11px] font-semibold">Gizle</button>
+      <button onclick="dismissMappingAlert()" class="text-blue-500 hover:text-blue-700 text-[11px] font-semibold cursor-pointer">Gizle</button>
     </div>
 
-    <!-- Active Segment Indicator Banner -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-100/80 px-4 py-2.5 rounded-xl border border-slate-200 text-xs gap-2">
-      <div class="flex items-center space-x-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-        <span class="font-bold text-slate-800" id="currentSegmentLabel">Operasyonel Kapsam: Tüm Operasyon (Konsolide)</span>
-      </div>
-      <span class="text-slate-500 text-[11px]" id="currentSegmentSubtext">Tüm çağrılar ilk olarak L1 Servis Masası tarafından karşılanmaktadır</span>
-    </div>
-
-    <!-- Operasyonel Süreç ve Eskalasyon Akış Hattı (Connected Process Pipeline) -->
-    <div id="escalationFlowContainer" class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-3">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
-        <div class="flex items-center space-x-2.5">
-          <div class="p-1.5 rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
-            <i data-lucide="git-merge" class="w-4 h-4"></i>
+    <!-- Operasyonel Süreç ve Eskalasyon Akış Hattı (Connected Visual Workflow Stepper) -->
+    <div id="escalationFlowContainer" class="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between pb-3.5 border-b border-slate-100 gap-3">
+        <div class="flex items-center space-x-3">
+          <div class="p-2.5 rounded-xl bg-blue-600 text-white shadow-xs">
+            <i data-lucide="git-merge" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-xs sm:text-sm font-bold text-slate-800">Operasyonel Süreç ve Eskalasyon Akış Hattı</h3>
-            <p class="text-[11px] text-slate-400">Tüm talepler L1 Servis Masası tarafından karşılanır, çözülür veya ilgili sepetlere sevk edilir</p>
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-sm font-bold text-slate-900 tracking-tight">Operasyonel Süreç ve Eskalasyon Akış Hattı</h3>
+              <span id="currentSegmentLabel" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Operasyonel Kapsam: Tüm Operasyon (Konsolide)</span>
+            </div>
+            <p id="currentSegmentSubtext" class="text-xs text-slate-500 mt-0.5">Tüm çağrılar ilk olarak L1 Servis Masası tarafından karşılanmaktadır</p>
           </div>
         </div>
-        <div class="flex items-center space-x-2 self-start sm:self-auto">
-          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-            <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-            Toplam <span id="kpiTotalTickets" class="font-extrabold">-</span> Çağrı
+        <div class="flex items-center space-x-2 self-start md:self-auto shrink-0">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-slate-900 text-white shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Toplam <span id="kpiTotalTickets" class="font-extrabold text-blue-300">-</span> Çağrı
           </span>
         </div>
       </div>
 
-      <!-- 5-Step Connected Pipeline -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 relative">
+      <!-- 5-Step Connected Pipeline with Arrow Connectors -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 relative">
         
         <!-- Adım 1: L1 Karşılama -->
-        <div class="relative p-3.5 rounded-xl bg-gradient-to-br from-blue-50/90 to-slate-50/70 border border-blue-200/80 flex flex-col justify-between hover:shadow-xs transition">
-          <div class="flex items-center justify-between text-blue-900 font-semibold mb-1">
-            <span class="text-xs">1. L1 Karşılama</span>
-            <span class="p-1 rounded-md bg-blue-100/80 text-blue-700"><i data-lucide="headphones" class="w-3.5 h-3.5"></i></span>
+        <div class="relative p-4 rounded-xl bg-gradient-to-b from-blue-50/70 to-white border-t-4 border-t-blue-500 border-x border-b border-slate-200/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition">
+          <!-- Chevron Connector for desktop -->
+          <div class="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-2xs items-center justify-center text-slate-400">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span id="flowL1Total" class="text-2xl font-extrabold text-blue-950">-</span>
-            <span class="text-[10px] font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.5 rounded">%100 Hacim</span>
+          <div>
+            <div class="flex items-center justify-between text-blue-900 font-bold mb-1.5">
+              <span class="text-xs uppercase tracking-wider text-blue-600 font-bold">1. L1 Karşılama</span>
+              <span class="p-1 rounded-md bg-blue-100 text-blue-700"><i data-lucide="headphones" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+              <span id="flowL1Total" class="text-3xl font-black text-slate-900">-</span>
+              <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">%100 Hacim</span>
+            </div>
           </div>
-          <p class="text-[10px] text-slate-500 mt-1">Gelen tüm çağrıların ilk noktası</p>
+          <p class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Gelen tüm çağrıların ilk temas noktası</p>
         </div>
 
         <!-- Adım 2: L1 Doğrudan Çözülen (FCR) -->
-        <div class="relative p-3.5 rounded-xl bg-gradient-to-br from-emerald-50/90 to-slate-50/70 border border-emerald-200/80 flex flex-col justify-between hover:shadow-xs transition">
-          <div class="flex items-center justify-between text-emerald-900 font-semibold mb-1">
-            <span class="text-xs">2. Doğrudan Çözüm (FCR)</span>
-            <span class="p-1 rounded-md bg-emerald-100/80 text-emerald-700"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></span>
+        <div class="relative p-4 rounded-xl bg-gradient-to-b from-emerald-50/70 to-white border-t-4 border-t-emerald-500 border-x border-b border-slate-200/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition">
+          <!-- Chevron Connector for desktop -->
+          <div class="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-2xs items-center justify-center text-slate-400">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span id="flowL1Direct" class="text-2xl font-extrabold text-emerald-950">-</span>
-            <span id="flowL1DirectRate" class="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">-%</span>
+          <div>
+            <div class="flex items-center justify-between text-emerald-900 font-bold mb-1.5">
+              <span class="text-xs uppercase tracking-wider text-emerald-600 font-bold">2. Doğrudan Çözüm (FCR)</span>
+              <span class="p-1 rounded-md bg-emerald-100 text-emerald-700"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+              <span id="flowL1Direct" class="text-3xl font-black text-slate-900">-</span>
+              <span id="flowL1DirectRate" class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">-%</span>
+            </div>
           </div>
-          <p id="flowL1DirectDetail" class="text-[10px] text-slate-500 mt-1">L1'de doğrudan kapatılan</p>
+          <p id="flowL1DirectDetail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">L1'de doğrudan kapatılan çağrılar</p>
           <span id="kpiFcrRate" class="hidden">-%</span>
           <span id="kpiFcrCount" class="hidden">-</span>
         </div>
 
         <!-- Adım 3: L2 Sistem & VT -->
-        <div class="relative p-3.5 rounded-xl bg-gradient-to-br from-indigo-50/90 to-slate-50/70 border border-indigo-200/80 flex flex-col justify-between hover:shadow-xs transition">
-          <div class="flex items-center justify-between text-indigo-900 font-semibold mb-1">
-            <span class="text-xs">3. L2 Sistem & VT</span>
-            <span class="p-1 rounded-md bg-indigo-100/80 text-indigo-700"><i data-lucide="server" class="w-3.5 h-3.5"></i></span>
+        <div class="relative p-4 rounded-xl bg-gradient-to-b from-indigo-50/70 to-white border-t-4 border-t-indigo-500 border-x border-b border-slate-200/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition">
+          <!-- Chevron Connector for desktop -->
+          <div class="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-2xs items-center justify-center text-slate-400">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span id="flowL2Total" class="text-2xl font-extrabold text-indigo-950">-</span>
-            <span id="flowL2Rate" class="text-[10px] font-bold text-indigo-700 bg-indigo-100/70 px-1.5 py-0.5 rounded">-%</span>
+          <div>
+            <div class="flex items-center justify-between text-indigo-900 font-bold mb-1.5">
+              <span class="text-xs uppercase tracking-wider text-indigo-600 font-bold">3. L2 Sistem & VT</span>
+              <span class="p-1 rounded-md bg-indigo-100 text-indigo-700"><i data-lucide="server" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+              <span id="flowL2Total" class="text-3xl font-black text-slate-900">-</span>
+              <span id="flowL2Rate" class="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">-%</span>
+            </div>
           </div>
-          <p id="flowL2Detail" class="text-[10px] text-slate-500 mt-1">Veritabanı ve Deploy işlemleri</p>
+          <p id="flowL2Detail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Veritabanı ve deploy işlemleri</p>
         </div>
 
         <!-- Adım 4: L3 Yazılım & Hata -->
-        <div class="relative p-3.5 rounded-xl bg-gradient-to-br from-purple-50/90 to-slate-50/70 border border-purple-200/80 flex flex-col justify-between hover:shadow-xs transition">
-          <div class="flex items-center justify-between text-purple-900 font-semibold mb-1">
-            <span class="text-xs">4. L3 Yazılım & Hata</span>
-            <span class="p-1 rounded-md bg-purple-100/80 text-purple-700"><i data-lucide="layers" class="w-3.5 h-3.5"></i></span>
+        <div class="relative p-4 rounded-xl bg-gradient-to-b from-purple-50/70 to-white border-t-4 border-t-purple-500 border-x border-b border-slate-200/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition">
+          <!-- Chevron Connector for desktop -->
+          <div class="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-2xs items-center justify-center text-slate-400">
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span id="flowL3Total" class="text-2xl font-extrabold text-purple-950">-</span>
-            <span id="flowL3Rate" class="text-[10px] font-bold text-purple-700 bg-purple-100/70 px-1.5 py-0.5 rounded">-%</span>
+          <div>
+            <div class="flex items-center justify-between text-purple-900 font-bold mb-1.5">
+              <span class="text-xs uppercase tracking-wider text-purple-600 font-bold">4. L3 Yazılım & Hata</span>
+              <span class="p-1 rounded-md bg-purple-100 text-purple-700"><i data-lucide="layers" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+              <span id="flowL3Total" class="text-3xl font-black text-slate-900">-</span>
+              <span id="flowL3Rate" class="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">-%</span>
+            </div>
           </div>
-          <p id="flowL3Detail" class="text-[10px] text-slate-500 mt-1">Yazılım hata aktarımları</p>
+          <p id="flowL3Detail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Yazılım ve kod analiz aktarımları</p>
         </div>
 
         <!-- Adım 5: İş Geliştirme (Öneri) -->
-        <div class="relative p-3.5 rounded-xl bg-gradient-to-br from-amber-50/90 to-slate-50/70 border border-amber-200/80 flex flex-col justify-between hover:shadow-xs transition">
-          <div class="flex items-center justify-between text-amber-900 font-semibold mb-1">
-            <span class="text-xs">5. İş Geliştirme</span>
-            <span class="p-1 rounded-md bg-amber-100/80 text-amber-700"><i data-lucide="lightbulb" class="w-3.5 h-3.5"></i></span>
+        <div class="relative p-4 rounded-xl bg-gradient-to-b from-amber-50/70 to-white border-t-4 border-t-amber-500 border-x border-b border-slate-200/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition">
+          <div>
+            <div class="flex items-center justify-between text-amber-900 font-bold mb-1.5">
+              <span class="text-xs uppercase tracking-wider text-amber-600 font-bold">5. İş Geliştirme</span>
+              <span class="p-1 rounded-md bg-amber-100 text-amber-700"><i data-lucide="lightbulb" class="w-3.5 h-3.5"></i></span>
+            </div>
+            <div class="flex items-baseline justify-between mt-2">
+              <span id="flowBizDevTotal" class="text-3xl font-black text-slate-900">-</span>
+              <span id="flowBizDevRate" class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">-%</span>
+            </div>
           </div>
-          <div class="flex items-baseline justify-between mt-1.5">
-            <span id="flowBizDevTotal" class="text-2xl font-extrabold text-amber-950">-</span>
-            <span id="flowBizDevRate" class="text-[10px] font-bold text-amber-700 bg-amber-100/70 px-1.5 py-0.5 rounded">-%</span>
-          </div>
-          <p id="flowBizDevDetail" class="text-[10px] text-slate-500 mt-1">Öneri ve İyileştirme</p>
+          <p id="flowBizDevDetail" class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100">Öneri ve ek hizmet talepleri</p>
         </div>
 
       </div>
     </div>
 
     <!-- 4 Focused Executive KPIs Grid -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
       <!-- 1. Çözüm Başarı Oranı -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs relative group hover:border-emerald-200 transition" title="Kapatılan ve çözüme kavuşturulan çağrıların toplam çağrılara oranı">
+      <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-emerald-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-600">Çözüm Başarı Oranı</span>
-          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Çözüm Başarı Oranı</span>
+          <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
             <i data-lucide="check-circle-2" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2.5 flex items-baseline justify-between">
-          <span id="kpiOverallSla" class="text-2xl font-extrabold text-emerald-700">-%</span>
-          <span id="kpiResolvedDetail" class="text-[11px] font-medium text-slate-500">- Çözülen</span>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span id="kpiOverallSla" class="text-3xl font-black text-emerald-600">-%</span>
+          <span id="kpiResolvedDetail" class="text-xs font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">- Çözülen</span>
         </div>
-        <div class="mt-1 flex items-center justify-between text-[10px] text-slate-400">
-          <span>Başarı Oranı</span>
-          <span id="kpiResolvedRate" class="font-medium text-amber-600">- Devam Eden</span>
+        <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+          <span class="text-slate-400">Devam Eden:</span>
+          <span id="kpiResolvedRate" class="font-bold text-amber-600">- Çağrı</span>
         </div>
       </div>
 
-      <!-- 2. Yeniden Açılma (Reopen Kalite) -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs relative group hover:border-amber-200 transition" title="Kullanıcının çözümü yetersiz bulup tekrar açtığı çağrı oranı">
+      <!-- 2. Yeniden Açılma Oranı -->
+      <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-amber-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-600">Yeniden Açılma Oranı</span>
-          <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Yeniden Açılma Oranı</span>
+          <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2.5 flex items-baseline justify-between">
-          <span id="kpiReopenRate" class="text-2xl font-extrabold text-amber-700">-%</span>
-          <span class="text-[11px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">Kalite Riski</span>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span id="kpiReopenRate" class="text-3xl font-black text-amber-600">-%</span>
+          <span class="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md uppercase">Kalite Riski</span>
         </div>
-        <p class="text-[10px] text-slate-400 mt-1">Kullanıcı itirazı / re-open payı</p>
+        <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+          <span>Kullanıcı itiraz / re-open payı</span>
+        </div>
       </div>
 
       <!-- 3. İlk Ele Alınma Süresi (MTTA) -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs relative group hover:border-sky-200 transition" title="Talebe ilk aksiyon ve yanıt verilene kadar geçen fiili süre">
+      <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-sky-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-600">İlk Ele Alınma (MTTA)</span>
-          <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">İlk Ele Alınma (MTTA)</span>
+          <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0">
             <i data-lucide="clock" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2.5 flex items-baseline justify-between">
-          <span id="kpiAvgMtta" class="text-2xl font-extrabold text-slate-900">- dk</span>
-          <span class="text-[11px] font-semibold text-blue-600">İlk Müdahale</span>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span id="kpiAvgMtta" class="text-3xl font-black text-slate-900">- dk</span>
+          <span class="text-[10px] font-bold text-sky-800 bg-sky-100 border border-sky-200 px-2 py-0.5 rounded-md">İlk Müdahale</span>
         </div>
-        <p class="text-[10px] text-slate-400 mt-1">Personelin ortalama ilk temas hızı</p>
+        <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+          <span>Ortalama ilk temas süresi</span>
+        </div>
       </div>
 
-      <!-- 4. Net Çalışma Süresi (MTTR) -->
-      <div class="bg-white p-4 rounded-xl border border-slate-200/90 shadow-xs relative group hover:border-purple-200 transition" title="Dış bekleme süreleri düşülmüş fiili personel çalışma süresi">
+      <!-- 4. Net Çözüm Eforu (MTTR) -->
+      <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-purple-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-600">Net Çözüm Eforu (MTTR)</span>
-          <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center">
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Net Çözüm Eforu (MTTR)</span>
+          <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0">
             <i data-lucide="timer" class="w-4 h-4"></i>
           </div>
         </div>
-        <div class="mt-2.5 flex items-baseline justify-between">
-          <span id="kpiAvgNetMttr" class="text-2xl font-extrabold text-slate-900">- sa</span>
-          <span id="kpiExtWait" class="text-[10px] text-slate-500 font-medium">- sa dış bekleme</span>
+        <div class="mt-3 flex items-baseline justify-between">
+          <span id="kpiAvgNetMttr" class="text-3xl font-black text-purple-700">- sa</span>
+          <span id="kpiExtWait" class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">- sa dış bekleme</span>
         </div>
-        <p class="text-[10px] text-slate-400 mt-1">Net personel çalışma süresi</p>
+        <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+          <span>Net personel çalışma süresi</span>
+        </div>
       </div>
 
     </div>
@@ -634,7 +655,7 @@
           <div>
             <div class="flex items-center gap-2">
               <h2 class="text-xs sm:text-sm font-bold text-slate-900 tracking-wide uppercase">METRİKA Akıllı Yönetici Özeti</h2>
-              <span id="aiModelName" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">Qwen 3.5 (122B)</span>
+              <span id="aiModelName" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100"></span>
             </div>
             <p class="text-[11px] text-slate-500 mt-0.5">Operasyonel Darboğazlar ve Proaktif Çözüm Önerileri</p>
           </div>
@@ -1173,7 +1194,10 @@
         const ai = data.executive_insights || {};
 
         const modelNameEl = document.getElementById('aiModelName');
-        if (modelNameEl) modelNameEl.innerText = ai.source || 'Qwen 3.5 (122B - TÜRKSAT PAAS)';
+        if (modelNameEl) {
+          modelNameEl.innerText = ai.source || 'Qwen 3.5 (122B - TÜRKSAT PAAS)';
+          modelNameEl.classList.remove('hidden');
+        }
 
         const narrativeEl = document.getElementById('aiExecutiveNarrative');
         const narrativeContainer = document.getElementById('aiExecutiveNarrativeContainer');
@@ -1291,17 +1315,28 @@
 
     function updateSourceBadge() {
       const badge = document.getElementById('activeSourceBadge');
-      const label = document.getElementById('activeSourceLabel');
+      const dot = document.getElementById('activeSourceDot');
+      if (!badge) return;
       if (currentSource === 'glpi') {
-        label.innerText = 'Veri Kaynağı: Canlı GLPI API';
-        badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200';
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200 shadow-2xs';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-blue-600 animate-pulse';
       } else if (currentSource === 'mock') {
-        label.innerText = 'Veri Kaynağı: Test Verisi';
-        badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200';
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-600 animate-pulse';
       } else if (currentSource === 'upload') {
-        label.innerText = 'Veri Kaynağı: Yüklenen Dosya';
-        badge.className = 'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200';
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs';
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-600 animate-pulse';
       }
+    }
+
+    function dismissMappingAlert() {
+      const alertEl = document.getElementById('mappingAlert');
+      if (!alertEl) return;
+      alertEl.classList.add('opacity-0', '-translate-y-2');
+      setTimeout(() => {
+        alertEl.classList.add('hidden');
+        alertEl.classList.remove('opacity-0', '-translate-y-2');
+      }, 400);
     }
 
     function toggleUploadModal() {
@@ -1345,8 +1380,12 @@
         updateSourceBadge();
 
         if (data.mapping_summary) {
+          const mappingEl = document.getElementById('mappingAlert');
           document.getElementById('mappingSummaryText').innerText = data.mapping_summary;
-          document.getElementById('mappingAlert').classList.remove('hidden');
+          mappingEl.classList.remove('hidden');
+          setTimeout(() => {
+            dismissMappingAlert();
+          }, 5000);
         }
 
         setTimeout(() => {
@@ -1503,7 +1542,13 @@
 
       const modelNameEl = document.getElementById('aiModelName');
       if (modelNameEl) {
-        modelNameEl.innerText = ai.source || 'Qwen 3.5 (122B)';
+        if (ai.source && (ai.source.includes('Qwen') || ai.source.includes('PAAS') || ai.source.includes('LLM'))) {
+          modelNameEl.innerText = ai.source;
+          modelNameEl.classList.remove('hidden');
+        } else {
+          modelNameEl.classList.add('hidden');
+          modelNameEl.innerText = '';
+        }
       }
 
       const narrativeEl = document.getElementById('aiExecutiveNarrative');
