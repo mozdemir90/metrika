@@ -493,7 +493,7 @@
           <p class="text-[11px] text-slate-500 mt-2 pt-2 border-t border-slate-100 truncate" title="Gelen tüm çağrıların ilk temas noktası">İlk temas ve karşılama</p>
         </div>
 
-        <!-- Adım 2: L1 Doğrudan Çözülen (FCR) -->
+        <!-- Adım 2: L1 Doğrudan Çözülen -->
         <div class="relative p-4 rounded-xl bg-gradient-to-b from-emerald-50/70 to-white border-t-4 border-t-emerald-500 border-x border-b border-slate-200/80 shadow-2xs flex flex-col justify-between hover:shadow-xs transition">
           <!-- Chevron Connector for desktop -->
           <div class="hidden lg:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-2xs items-center justify-center text-slate-400">
@@ -501,8 +501,8 @@
           </div>
           <div>
             <div class="flex items-center justify-between text-emerald-900 font-bold mb-1.5">
-              <span class="text-xs uppercase tracking-wider text-emerald-600 font-bold">2. Doğrudan Çözüm (FCR)</span>
-              <span class="p-1 rounded-md bg-emerald-100 text-emerald-700"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></span>
+              <span class="text-xs uppercase tracking-wider text-emerald-600 font-bold" title="Üst ekiplere aktarılmadan doğrudan L1 Servis Masası tarafından çözülen çağrılar">2. Doğrudan Çözüm</span>
+              <span class="p-1 rounded-md bg-emerald-100 text-emerald-700" title="Üst ekiplere aktarılmadan doğrudan L1 Servis Masası tarafından çözülen çağrılar"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i></span>
             </div>
             <div class="flex items-baseline justify-between mt-2">
               <span id="flowL1Direct" class="text-3xl font-black text-slate-900">-</span>
@@ -608,10 +608,10 @@
         </div>
       </div>
 
-      <!-- 3. İlk Ele Alınma Süresi (MTTA) -->
+      <!-- 3. İlk Müdahale Süresi -->
       <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-sky-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">İlk Ele Alınma (MTTA)</span>
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider" title="Çağrı açılışından personelin ilk işlem yaptığı ana kadar geçen ortalama süre">İlk Müdahale Süresi</span>
           <div class="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center shrink-0">
             <i data-lucide="clock" class="w-4 h-4"></i>
           </div>
@@ -625,20 +625,20 @@
         </div>
       </div>
 
-      <!-- 4. Net Çözüm Eforu (MTTR) -->
+      <!-- 4. Net Çözüm Süresi -->
       <div class="bg-white p-4.5 rounded-2xl border-l-4 border-l-purple-500 border-y border-r border-slate-200/90 shadow-sm flex flex-col justify-between hover:shadow-md transition">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Net Çözüm Eforu (MTTR)</span>
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-wider" title="Kurum bekleme süreleri düşülmüş, personelin harcadığı fiili çalışma süresi">Net Çözüm Süresi</span>
           <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center shrink-0">
             <i data-lucide="timer" class="w-4 h-4"></i>
           </div>
         </div>
         <div class="mt-3 flex items-baseline justify-between">
           <span id="kpiAvgNetMttr" class="text-3xl font-black text-purple-700">- sa</span>
-          <span id="kpiExtWait" class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">- sa dış bekleme</span>
+          <span id="kpiExtWait" class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md" title="Kurumdan bilgi veya onay beklenirken sayaçların dondurulduğu süre">- sa dış bekleme</span>
         </div>
         <div class="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-          <span>Net personel çalışma süresi</span>
+          <span>Fiili personel çalışma süresi</span>
         </div>
       </div>
 
@@ -1067,7 +1067,7 @@
                   <span id="sortIcon_avg_net_resolution_hours" class="text-slate-400 text-[10px]">↕</span>
                 </div>
               </th>
-              <th onclick="sortTechTable('avg_first_response_minutes')" class="py-3 px-3 text-center cursor-pointer hover:bg-slate-200/60 transition" title="İlk Müdahale / Ele Alınma Süresi (MTTA)">
+              <th onclick="sortTechTable('avg_first_response_minutes')" class="py-3 px-3 text-center cursor-pointer hover:bg-slate-200/60 transition" title="İlk Müdahale ve Ele Alınma Süresi">
                 <div class="flex items-center justify-center gap-1">
                   <span>Ort. İlk Yanıt</span>
                   <span id="sortIcon_avg_first_response_minutes" class="text-slate-400 text-[10px]">↕</span>
@@ -1104,7 +1104,7 @@
             </div>
             <div>
               <strong class="text-blue-700 font-semibold">Ort. İlk Yanıt:</strong>
-              <span class="text-slate-600"> Çağrı açılışından personelin ilk aksiyon veya müdahale aldığı ana kadar geçen ilk temas süresidir (MTTA).</span>
+              <span class="text-slate-600"> Çağrı açılışından personelin ilk aksiyon veya müdahale aldığı ana kadar geçen ilk temas ve müdahale süresidir.</span>
             </div>
             <div>
               <strong class="text-amber-700 font-semibold">Ort. Dış Bekleme:</strong>
@@ -2018,7 +2018,7 @@
         str = str.replace(/^BN-/, '');
         if (str.toLowerCase().includes('hata')) return 'Yazılım Hatası (L3)';
         if (str.toLowerCase().includes('veritabanı') || str.toLowerCase().includes('veritabani')) return 'Veritabanı Görevi';
-        if (str.toLowerCase().includes('deploy') || str.toLowerCase().includes('ugd')) return 'Deploy (UGD)';
+        if (str.toLowerCase().includes('deploy') || str.toLowerCase().includes('ugd')) return 'Deploy Görevi';
         if (str.toLowerCase().includes('öneri') || str.toLowerCase().includes('oneri')) return 'Geliştirme / Öneri';
         return str;
       }
